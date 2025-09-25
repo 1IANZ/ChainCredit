@@ -1,32 +1,56 @@
-import { Box, Button, TextField, Paper, Typography } from "@mui/material";
+import { Box, Button, TextField, Paper, Typography, useTheme } from "@mui/material";
 import TextType from "../components/TextType/TextType";
 import TitleBar from "../components/TitleBar";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export default function Login() {
-  return (
-    <>
-      <TitleBar title="LOGIN" data-tauri-drag-regio />
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const [privateKey, setPrivateKey] = useState<string>("");
+  const handleLogin = async () => {
 
+    handleDirectEnter()
+  };
+  const handleDirectEnter = async () => {
+    const currentWindow = getCurrentWindow();
+    try {
+      await currentWindow.setSize(new (await import('@tauri-apps/api/window')).LogicalSize(900, 650));
+      await currentWindow.center();
+      await currentWindow.setTitle("Main");
+      navigate('/main');
+    } catch (error) {
+      console.error("Failed to update window or navigate:", error);
+    }
+  };
+
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <TitleBar title="LOGIN" data-tauri-drag-region />
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "calc(100vh - 50px)",
-        }
-        }
+          flexGrow: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'background.default',
+          p: 2,
+        }}
       >
+
         <Paper
-          elevation={10}
+          elevation={4}
           sx={{
-            padding: 5,
-            borderRadius: 2,
+            p: { xs: 3, sm: 4 },
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            width: { xs: '90%', sm: 500 },
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+            width: '100%',
+            maxWidth: 450,
+            borderRadius: 3,
+            boxSizing: 'border-box',
           }}
         >
           <TextType
@@ -36,9 +60,9 @@ export default function Login() {
             pauseDuration={1500}
             showCursor={true}
             cursorCharacter="|"
-            textColors={["#1976d2", "#43a047"]}
+            textColors={[theme.palette.primary.main, theme.palette.secondary.main]}
           />
-          <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 4 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4, textAlign: 'center' }}>
             Access your account with your private key.
           </Typography>
           <TextField
@@ -47,24 +71,47 @@ export default function Login() {
             type="password"
             fullWidth
             sx={{ mb: 3 }}
+            value={privateKey}
+            onChange={(e) => setPrivateKey(e.target.value)}
           />
           <Button
             variant="contained"
             color="primary"
             fullWidth
             sx={{
-              padding: '12px 0',
+              py: 1.5,
               fontWeight: 'bold',
               fontSize: '1rem',
+              textTransform: 'none',
+              mt: 2,
               '&:hover': {
-                boxShadoxw: '0 5px 15px rgba(25, 118, 210, 0.4)',
+                boxShadow: `0 5px 15px ${theme.palette.primary.main}60`,
               }
             }}
+            onClick={handleLogin}
           >
-            L O G I N
+            私钥登录
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{
+              py: 1.5,
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              textTransform: 'none',
+              mt: 2,
+              '&:hover': {
+                boxShadow: `0 5px 15px ${theme.palette.primary.main}60`,
+              }
+            }}
+            onClick={handleDirectEnter}
+          >
+            直接进入
           </Button>
         </Paper>
-      </Box >
-    </>
-  )
+      </Box>
+    </Box >
+  );
 }
