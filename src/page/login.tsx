@@ -6,13 +6,14 @@ export default function Login() {
   return (
     <>
       <TitleBar title="LOGIN" data-tauri-drag-regio />
+
       <Box
         sx={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          height: "calc(100vh - 80px)",
+          height: "calc(100vh - 50px)",
         }
         }
       >
@@ -24,7 +25,7 @@ export default function Login() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            width: { xs: '90%', sm: 400 },
+            width: { xs: '90%', sm: 500 },
             boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
           }}
         >

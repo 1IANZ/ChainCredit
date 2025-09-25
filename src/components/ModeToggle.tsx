@@ -1,9 +1,9 @@
 import { useContext } from 'react';
 import { IconButton, useTheme } from '@mui/material';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
 
-import { ColorModeContext } from './ThemeContext'; // 导入 Context
+import SunnyIcon from '@mui/icons-material/Sunny';
+import BedtimeIcon from '@mui/icons-material/Bedtime';
+import { ColorModeContext } from './ThemeContext';
 
 export default function ModeToggle() {
 
@@ -15,12 +15,11 @@ export default function ModeToggle() {
     <IconButton
       sx={{ ml: 1 }}
       onClick={colorMode.toggleColorMode}
-      color="inherit"
     >
       {theme.palette.mode === 'dark' ? (
-        <Brightness7Icon />
+        <SunnyIcon />
       ) : (
-        <Brightness4Icon />
+        <BedtimeIcon />
       )}
     </IconButton>
   );
