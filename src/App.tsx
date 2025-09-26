@@ -11,6 +11,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/main" element={<Main />} />
+
       </Routes>
       <Toaster theme={theme.palette.mode} />
     </BrowserRouter>
