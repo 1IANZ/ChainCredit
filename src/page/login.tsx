@@ -16,8 +16,6 @@ export default function Login() {
   const handleDirectEnter = async () => {
     const currentWindow = getCurrentWindow();
     try {
-      await currentWindow.setSize(new (await import('@tauri-apps/api/window')).LogicalSize(900, 650));
-      await currentWindow.center();
       await currentWindow.setTitle("Main");
       navigate('/main');
     } catch (error) {

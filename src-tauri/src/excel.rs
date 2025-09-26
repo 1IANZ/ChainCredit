@@ -1,4 +1,5 @@
 use calamine::{open_workbook_auto, Reader};
+use rust_xlsxwriter::{workbook::Workbook, Format};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -38,7 +39,6 @@ pub struct CompanyData {
 pub struct CompanyWithScore {
     #[serde(flatten)]
     company_data: CompanyData,
-
     credit_score: f64,
     credit_rating: String, // AAA, AA, A, BBB, BB, B, CCC, CC, C
     credit_limit: String,  // 授信额度建议
@@ -64,7 +64,6 @@ pub struct ExcelResult {
     companies: Vec<CompanyWithScore>,
 }
 
-// 增强的信用评分算法
 fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
     let mut details = ScoreDetails {
         financial_score: 0.0,
@@ -147,7 +146,7 @@ fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         _ => 2.0,
     };
 
-    // 4. 风险记录评分 (10分基础分，扣分制)
+    // 4. 风险记录评分 (10分)
     details.risk_score = 10.0;
     details.risk_score -= (company.overdue_count as f64 * 2.0).min(10.0);
     details.risk_score -= (company.legal_disputes_count as f64 * 3.0).min(10.0);
@@ -209,7 +208,7 @@ pub fn process_excel(paths: Vec<String>) -> Result<Vec<ExcelResult>, String> {
                 continue;
             }
 
-            let mut rows = range.rows();
+            let mut rows: calamine::Rows<'_, calamine::Data> = range.rows();
 
             // 读取表头
             let headers: Vec<String> = match rows.next() {
@@ -317,4 +316,61 @@ pub fn process_excel(paths: Vec<String>) -> Result<Vec<ExcelResult>, String> {
     }
 
     Ok(all_results)
+}
+
+#[tauri::command]
+pub async fn generate_template_excel(
+    file_path: String,
+    headers: Vec<String>,
+    template_row: Option<Vec<String>>,
+) -> Result<(), String> {
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+
+    // 创建居中格式
+    let center_format = Format::new()
+        .set_align(rust_xlsxwriter::FormatAlign::Center)
+        .set_align(rust_xlsxwriter::FormatAlign::VerticalCenter);
+
+    // 创建表头格式（居中+加粗）
+    let header_format = Format::new()
+        .set_align(rust_xlsxwriter::FormatAlign::Center)
+        .set_align(rust_xlsxwriter::FormatAlign::VerticalCenter)
+        .set_bold();
+
+    // 写入表头
+    for (col, header) in headers.iter().enumerate() {
+        worksheet
+            .write_string_with_format(0, col as u16, header, &header_format)
+            .map_err(|e| format!("写入表头失败: {}", e))?;
+    }
+
+    // 写入模板数据
+    if let Some(template_data) = template_row {
+        let data_count = template_data.len().min(headers.len());
+
+        for (col, value) in template_data.iter().take(data_count).enumerate() {
+            if let Ok(num) = value.parse::<f64>() {
+                worksheet
+                    .write_number_with_format(1, col as u16, num, &center_format)
+                    .map_err(|e| format!("写入数字失败: {}", e))?;
+            } else {
+                worksheet
+                    .write_string_with_format(1, col as u16, value, &center_format)
+                    .map_err(|e| format!("写入字符串失败: {}", e))?;
+            }
+        }
+    }
+
+    // 设置列宽
+    for col in 0..headers.len() {
+        worksheet
+            .set_column_width(col as u16, 15.0)
+            .map_err(|e| format!("设置列宽失败: {}", e))?;
+    }
+
+    workbook
+        .save(&file_path)
+        .map_err(|e| format!("保存文件失败: {}", e))?;
+    Ok(())
 }

@@ -529,6 +529,7 @@ name = "chaincredit"
 version = "0.1.0"
 dependencies = [
  "calamine",
+ "rust_xlsxwriter",
  "serde",
  "serde_json",
  "tauri",
@@ -3190,6 +3191,15 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "rust_xlsxwriter"
+version = "0.90.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21d941aa7282d80ea8f2d889b5353e43c3f2997c5410f6582c520b8907a83a70"
+dependencies = [
+ "zip",
 ]
 
 [[package]]

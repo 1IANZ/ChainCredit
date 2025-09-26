@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Box, Typography, Paper, useTheme, keyframes, alpha } from "@mui/material";
+import { Box, Typography, Paper, useTheme, keyframes, alpha, Button } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import DownloadIcon from '@mui/icons-material/Download';
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { open } from '@tauri-apps/plugin-dialog';
+import { open, save } from '@tauri-apps/plugin-dialog';
+import { invoke } from '@tauri-apps/api/core';
+import { toast } from "sonner";
 
 const bounce = keyframes`
   0%, 100% {
@@ -29,15 +32,6 @@ const pulse = keyframes`
   }
 `;
 
-const shimmer = keyframes`
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
-`;
-
 interface ExcelUploaderProps {
   onFileSelect: (filePath: string[]) => void;
   disabled?: boolean;
@@ -47,6 +41,7 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
   const theme = useTheme();
   const [isDragging, setIsDragging] = useState(false);
   const [filePaths, setFilePaths] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
   const filePathsRef = useRef<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isProcessing = useRef(false);
@@ -86,8 +81,10 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
                 });
                 onFileSelect(excelFiles);
               }
+              setTimeout(() => {
+                setIsDragging(false);
+              }, 100);
             }
-              setIsDragging(false);
               break;
             case "leave":
               setIsDragging(false);
@@ -170,170 +167,126 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
     }
   }, [onFileSelect]);
 
+  const handleGenerateTemplate = async () => {
+    if (disabled || isGenerating) return;
+
+    try {
+      setIsGenerating(true);
+
+      const filePath = await save({
+        filters: [{
+          name: 'Excel',
+          extensions: ['xlsx']
+        }],
+        defaultPath: '企业信息模板.xlsx'
+      });
+
+      if (!filePath) {
+        setIsGenerating(false);
+        return;
+      }
+
+      await invoke('generate_template_excel', {
+        filePath,
+        headers: [
+          '企业ID',
+          '企业名称',
+          '行业',
+          '营业收入(万元)',
+          '净利润(万元)',
+          '资产总额(万元)',
+          '负债总额(万元)',
+          '资产负债率(%)',
+          '研发投入占比(%)',
+          '专利数量',
+          '上游核心企业数量',
+          '下游客户数量',
+          '历史逾期次数',
+          '法律诉讼次数'
+        ],
+        templateRow: [
+          '1',
+          '企业1',
+          '新能源',
+          '11329',
+          '798',
+          '20468',
+          '12135',
+          '59.3',
+          '7.4',
+          '10',
+          '3',
+          '12',
+          '2',
+          '1'
+        ]
+      });
+      toast.success('生成模板文件成功!');
+    } catch (error) {
+      console.error('生成模板文件失败:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
-    <Paper
-      elevation={isDragging ? 12 : 0}
-      onClick={handleFileClick}
-      sx={{
-        width: "100%",
-        maxWidth: 600,
-        height: 400,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: disabled ? "not-allowed" : "pointer",
-        position: "relative",
-        background: isDragging
-          ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.light, 0.08)} 100%)`
-          : theme.palette.mode === 'dark'
-            ? `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.8)} 100%)`
-            : `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.grey[50], 0.5)} 100%)`,
-        border: `2px dashed ${isDragging ? theme.palette.primary.main : alpha(theme.palette.divider, 0.3)}`,
-        borderRadius: 3,
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        opacity: disabled ? 0.5 : 1,
-        pointerEvents: disabled ? "none" : "auto",
-        overflow: "hidden",
-        "&:hover": !disabled
-          ? {
-            borderColor: alpha(theme.palette.primary.main, 0.5),
-            transform: "translateY(-4px)",
-            boxShadow: `0 12px 24px ${alpha(theme.palette.primary.main, 0.15)}`,
-            background: theme.palette.mode === 'dark'
-              ? `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.05)} 0%, ${alpha(theme.palette.primary.main, 0.08)} 100%)`
-              : `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.03)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
-            "& .upload-icon": {
-              animation: `${bounce} 1s ease-in-out infinite`,
-              color: theme.palette.primary.main,
-            },
-            "& .shimmer-effect": {
-              animation: `${shimmer} 2s linear infinite`,
-            }
-          }
-          : {},
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: isDragging
-            ? `radial-gradient(circle at center, ${alpha(theme.palette.primary.main, 0.1)} 0%, transparent 70%)`
-            : "none",
-          pointerEvents: "none",
-          transition: "opacity 0.3s ease",
-        },
-      }}
-    >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".xlsx,.xls,.xlsm,.xlsb"
-        onChange={handleFileSelect}
-        style={{ display: "none" }}
-      />
-
-      {/* Shimmer effect overlay */}
-      <Box
-        className="shimmer-effect"
+    <Box sx={{ width: "100%", maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Paper
+        elevation={0}
+        onClick={handleFileClick}
         sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.05)} 50%, transparent 100%)`,
-          backgroundSize: "200% 100%",
-          pointerEvents: "none",
-          opacity: 0,
-          transition: "opacity 0.3s ease",
-          "&:hover": {
-            opacity: 1,
-          }
-        }}
-      />
-
-      <Box
-        sx={{
+          width: "100%",
+          height: 400,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 2,
-          zIndex: 1,
+          justifyContent: "center",
+          cursor: disabled ? "not-allowed" : "pointer",
+          position: "relative",
+          backgroundColor: theme.palette.background.paper,
+          border: `2px dashed ${alpha(theme.palette.divider, 0.3)}`,
+          borderRadius: 3,
+          transition: "all 0.2s ease-out",
+          opacity: disabled ? 0.5 : 1,
+          pointerEvents: disabled ? "none" : "auto",
+          overflow: "hidden",
+          "&:hover": !disabled
+            ? {
+              borderColor: alpha(theme.palette.primary.main, 0.5),
+              transform: "translateY(-2px)",
+              boxShadow: `0 8px 16px ${alpha(theme.palette.primary.main, 0.1)}`,
+              "& .upload-icon": {
+                animation: `${bounce} 1s ease-in-out infinite`,
+                color: theme.palette.primary.main,
+              },
+            }
+            : {},
         }}
       >
-        <CloudUploadIcon
-          className="upload-icon"
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx,.xls,.xlsm,.xlsb"
+          onChange={handleFileSelect}
+          style={{ display: "none" }}
+        />
+
+        {/* 拖拽时的背景层 */}
+        <Box
           sx={{
-            fontSize: 90,
-            color: isDragging
-              ? theme.palette.primary.main
-              : alpha(theme.palette.text.secondary, 0.3),
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            filter: isDragging ? `drop-shadow(0 4px 8px ${alpha(theme.palette.primary.main, 0.3)})` : "none",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: alpha(theme.palette.primary.main, 0.08),
+            opacity: isDragging ? 1 : 0,
+            transition: "opacity 0.2s ease-out",
+            pointerEvents: "none",
           }}
         />
 
-        <Typography
-          variant="h5"
-          sx={{
-            color: isDragging ? theme.palette.primary.main : theme.palette.text.primary,
-            fontWeight: 600,
-            transition: "all 0.3s ease",
-            textAlign: "center",
-            animation: isDragging ? `${pulse} 1.5s ease-in-out infinite` : "none",
-          }}
-        >
-          {isDragging ? "释放文件到这里" : "拖放 Excel 文件"}
-        </Typography>
-
-        <Typography
-          variant="body1"
-          sx={{
-            color: alpha(theme.palette.text.secondary, 0.7),
-            textAlign: "center",
-          }}
-        >
-          或点击此处选择文件
-        </Typography>
-
-        <Box
-          sx={{
-            display: "flex",
-            gap: 1,
-            alignItems: "center",
-            mt: 2,
-            px: 3,
-            py: 1,
-            borderRadius: 2,
-            backgroundColor: alpha(theme.palette.primary.main, 0.08),
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-          }}
-        >
-          <InsertDriveFileIcon
-            sx={{
-              fontSize: 16,
-              color: theme.palette.primary.main,
-              opacity: 0.8,
-            }}
-          />
-          <Typography
-            variant="caption"
-            sx={{
-              fontFamily: "monospace",
-              color: theme.palette.primary.main,
-              fontWeight: 700,
-              fontSize: 15,
-              letterSpacing: 0.5,
-            }}
-          >
-            .xlsx .xls .xlsm .xlsb
-          </Typography>
-        </Box>
-      </Box>
-      {isDragging && (
+        {/* 拖拽时的边框效果 */}
         <Box
           sx={{
             position: "absolute",
@@ -341,16 +294,119 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
             left: -2,
             right: -2,
             bottom: -2,
+            border: `2px solid ${theme.palette.primary.main}`,
             borderRadius: 3,
-            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
-            backgroundSize: "300% 300%",
-            animation: `${shimmer} 3s linear infinite`,
-            opacity: 0.3,
+            opacity: isDragging ? 1 : 0,
+            transition: "opacity 0.2s ease-out",
             pointerEvents: "none",
-            zIndex: 0,
           }}
         />
-      )}
-    </Paper>
+
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+            zIndex: 1,
+          }}
+        >
+          <CloudUploadIcon
+            className="upload-icon"
+            sx={{
+              fontSize: 90,
+              color: isDragging
+                ? theme.palette.primary.main
+                : alpha(theme.palette.text.secondary, 0.3),
+              transition: "color 0.2s ease-out",
+              filter: isDragging ? `drop-shadow(0 4px 8px ${alpha(theme.palette.primary.main, 0.3)})` : "none",
+            }}
+          />
+
+          <Typography
+            variant="h5"
+            sx={{
+              color: isDragging ? theme.palette.primary.main : theme.palette.text.primary,
+              fontWeight: 600,
+              transition: "color 0.2s ease-out",
+              textAlign: "center",
+              animation: isDragging ? `${pulse} 1.5s ease-in-out infinite` : "none",
+            }}
+          >
+            {isDragging ? "释放文件到这里" : "拖放 Excel 文件"}
+          </Typography>
+
+          <Typography
+            variant="body1"
+            sx={{
+              color: alpha(theme.palette.text.secondary, 0.7),
+              textAlign: "center",
+            }}
+          >
+            或点击此处选择文件
+          </Typography>
+
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              alignItems: "center",
+              mt: 2,
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            }}
+          >
+            <InsertDriveFileIcon
+              sx={{
+                fontSize: 16,
+                color: theme.palette.primary.main,
+                opacity: 0.8,
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                fontFamily: "monospace",
+                color: theme.palette.primary.main,
+                fontWeight: 500,
+                letterSpacing: 0.5,
+              }}
+            >
+              .xlsx .xls .xlsm .xlsb
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
+
+      {/* 下载模板按钮 */}
+      <Button
+        variant="outlined"
+        startIcon={<DownloadIcon />}
+        onClick={handleGenerateTemplate}
+        disabled={disabled || isGenerating}
+        sx={{
+          alignSelf: 'center',
+          borderRadius: 2,
+          textTransform: 'none',
+          px: 3,
+          py: 1,
+          borderColor: alpha(theme.palette.primary.main, 0.5),
+          color: theme.palette.primary.main,
+          '&:hover': {
+            borderColor: theme.palette.primary.main,
+            backgroundColor: alpha(theme.palette.primary.main, 0.08),
+          },
+          '&:disabled': {
+            borderColor: alpha(theme.palette.divider, 0.3),
+            color: alpha(theme.palette.text.secondary, 0.3),
+          }
+        }}
+      >
+        {isGenerating ? '生成中...' : '下载Excel模板'}
+      </Button>
+    </Box>
   );
 }
