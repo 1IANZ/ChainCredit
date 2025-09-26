@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Box, Typography, Paper, useTheme, keyframes } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { open } from '@tauri-apps/plugin-dialog';
 
 const bounce = keyframes`
   0%, 100% {
@@ -13,46 +14,84 @@ const bounce = keyframes`
 `;
 
 interface ExcelUploaderProps {
-  onFileSelect: (filePath: string) => void;
+  onFileSelect: (filePath: string[]) => void;
   disabled?: boolean;
 }
 
 export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelUploaderProps) {
   const theme = useTheme();
   const [isDragging, setIsDragging] = useState(false);
+  const [filePaths, setFilePaths] = useState<string[]>([]);
+  const filePathsRef = useRef<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isProcessing = useRef(false);
 
   useEffect(() => {
+    filePathsRef.current = filePaths;
+  }, [filePaths]);
+
+
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    let isMounted = true;
+
     const setupDragDrop = async () => {
-      const webview = getCurrentWebview();
-      const unlisten = await webview.onDragDropEvent((event) => {
-        switch (event.payload.type) {
-          case "over":
-            setIsDragging(true);
-            break;
-          case "drop":
-            {
-              const filePath = event.payload.paths[0];
-              if (filePath && isExcelFile(filePath)) {
-                onFileSelect(filePath);
+      try {
+        const webview = getCurrentWebview();
+
+        unlisten = await webview.onDragDropEvent((event) => {
+          if (isProcessing.current) return;
+          isProcessing.current = true;
+
+          switch (event.payload.type) {
+            case "over":
+              setIsDragging(true);
+              break;
+            case "drop": {
+              const currentPaths = filePathsRef.current;
+              const excelFiles = event.payload.paths.filter((path: string) =>
+                isExcelFile(path) && !currentPaths.includes(path)
+              );
+
+              if (excelFiles.length > 0) {
+                setFilePaths((prevPaths) => {
+                  const newPaths = [...prevPaths, ...excelFiles];
+                  const uniquePaths = Array.from(new Set(newPaths));
+                  filePathsRef.current = uniquePaths;
+                  return uniquePaths;
+                });
+                onFileSelect(excelFiles);
               }
             }
-            setIsDragging(false);
-            break;
-          case "leave":
-            setIsDragging(false);
-            break;
-        }
-      });
+              setIsDragging(false);
+              break;
+            case "leave":
+              setIsDragging(false);
+              break;
+          }
 
-      return () => {
-        unlisten();
-      };
+          isProcessing.current = false;
+        });
+
+        if (!isMounted && unlisten) {
+          unlisten();
+          unlisten = null;
+        }
+      } catch (error) {
+        console.error("Failed to setup drag drop event:", error);
+      }
     };
 
     setupDragDrop();
-  }, [onFileSelect]);
 
+    return () => {
+      isMounted = false;
+      if (unlisten) {
+        unlisten();
+        unlisten = null;
+      }
+    };
+  }, []);
   const isExcelFile = (filePath: string) => {
     const ext = filePath.toLowerCase();
     return [".xlsx", ".xls", ".xlsm", ".xlsb"].some((suffix) =>
@@ -60,23 +99,56 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
     );
   };
 
-  const handleClick = () => {
-    if (!disabled) fileInputRef.current?.click();
-  };
+  const handleFileClick = useCallback(async () => {
+    if (disabled) return;
+    const selected = await open({
+      multiple: true,
+      filters: [
+        { name: "Excel", extensions: ["xlsx", "xls", "xlsm", "xlsb"] }
+      ]
+    });
+    if (!selected) return;
+    const paths = Array.isArray(selected) ? selected : [selected];
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const currentPaths = filePathsRef.current;
+    const newPaths = paths.filter((path) => !currentPaths.includes(path));
+    if (newPaths.length > 0) {
+      setFilePaths((prevPaths) => {
+        const allPaths = [...prevPaths, ...newPaths];
+        const uniquePaths = Array.from(new Set(allPaths));
+        filePathsRef.current = uniquePaths;
+        return uniquePaths;
+      });
+      onFileSelect(newPaths);
+    }
+  }, [disabled, onFileSelect]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      if (isExcelFile(file.name)) {
-        onFileSelect(file.name);
+      const excelFiles = Array.from(e.target.files).filter(file =>
+        isExcelFile(file.name)
+      );
+
+      const newFilePaths = excelFiles.map(file => file.name);
+      const currentPaths = filePathsRef.current;
+      const filteredPaths = newFilePaths.filter((path) => !currentPaths.includes(path));
+
+      if (filteredPaths.length > 0) {
+        setFilePaths((prevPaths) => {
+          const allPaths = [...prevPaths, ...filteredPaths];
+          const uniquePaths = Array.from(new Set(allPaths));
+          filePathsRef.current = uniquePaths;
+          return uniquePaths;
+        });
+        onFileSelect(filteredPaths);
       }
     }
-  };
+  }, [onFileSelect]);
 
   return (
     <Paper
       elevation={isDragging ? 8 : 2}
-      onClick={handleClick}
+      onClick={handleFileClick}
       sx={{
         width: "100%",
         maxWidth: 600,
@@ -88,8 +160,7 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
         cursor: disabled ? "not-allowed" : "pointer",
         position: "relative",
         backgroundColor: theme.palette.background.paper,
-        border: `3px dashed ${isDragging ? theme.palette.primary.main : theme.palette.divider
-          }`,
+        border: `3px dashed ${isDragging ? theme.palette.primary.main : theme.palette.divider}`,
         borderRadius: 2,
         transition: "all 0.3s ease",
         opacity: disabled ? 0.6 : 1,
