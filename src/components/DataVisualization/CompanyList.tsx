@@ -58,13 +58,12 @@ export default function CompanyList({ companies, selectedCompany, onSelect }: Pr
           <InputLabel>筛选</InputLabel>
           <Select value={filter} label="筛选" onChange={(e) => setFilter(e.target.value as any)}>
             <MenuItem value="all">全部</MenuItem>
-            <MenuItem value="highCredit">高信用 (BBB↑)</MenuItem>
+            <MenuItem value="highCredit">高信用</MenuItem>
             <MenuItem value="highRisk">高风险</MenuItem>
           </Select>
         </FormControl>
       </Box>
 
-      {/* 列表 */}
       <List sx={{ flexGrow: 1, overflowY: "auto", p: 0 }}>
         {visibleCompanies.map((company) => (
           <ListItemButton

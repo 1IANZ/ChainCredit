@@ -46,7 +46,7 @@ export default function CompanyInfoCard({
               {isUploading ? "上链中..." : "上链存证"}
             </Button>
 
-            {/* 下载报告按钮 */}
+
             <Button
               variant="contained"
               startIcon={isDownloading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}

@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-
 import { DataAtom, titleAtom } from "../utils/store";
 import { useAtom } from "jotai";
 import DataVisualization from "../components/DataVisualization";

@@ -48,18 +48,22 @@ export default function DataVisualization({ data }: Props) {
         setIsDownloading(false);
         return;
       }
-
+      console.log(selectedCompany);
       await invoke("generate_single_report", {
         filePath,
-        company: selectedCompany
+        company: selectedCompany,
       });
+
       toast.success("报告生成成功");
     } catch (error) {
+      console.log(error);
       toast.error("生成报告失败");
     } finally {
       setIsDownloading(false);
     }
   };
+
+
 
 
   const handleUploadOnChain = async () => {
