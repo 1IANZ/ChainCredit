@@ -1,26 +1,23 @@
 import { useEffect } from "react";
-import { useAtom } from "jotai";
 import { useNavigate } from "react-router";
-import DataVisualization from "../components/DataVisualization";
-import { DataAtom } from "../utils/store";
-import TitleBar from "../components/TitleBar";
 
-export default function DataVisualizationPage() {
+import { DataAtom, titleAtom } from "../utils/store";
+import { useAtom } from "jotai";
+import DataVisualization from "../components/DataVisualization";
+
+export default function Dashboard() {
+  const [_title, setTitle] = useAtom(titleAtom);
   const [processedData] = useAtom(DataAtom);
   const navigate = useNavigate();
 
   useEffect(() => {
+    setTitle("Main");
     if (!processedData || processedData.length === 0) {
       navigate("/");
     }
-  }, [processedData, navigate]);
+  }, [setTitle, processedData, navigate]);
 
-  if (!processedData || processedData.length === 0) {
-    return null;
-  }
+  if (!processedData || processedData.length === 0) return null;
 
-  return <>
-    <TitleBar title="Main" />
-    <DataVisualization data={processedData} />
-  </>;
+  return <DataVisualization data={processedData} />;
 }

@@ -1,18 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import ExcelUploader from "../components/ExcelUploader";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { useAtom } from "jotai";
-import { DataAtom } from "../utils/store";
-import TitleBar from "../components/TitleBar";
+import { DataAtom, titleAtom } from "../utils/store";
 
 export default function Upload() {
+  const [_title, setTitle] = useAtom(titleAtom);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const navigate = useNavigate();
   const [_processedData, setProcessedData] = useAtom(DataAtom);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setTitle("Upload Excel");
+  }, [setTitle]);
+
   const handleFileSelect = async (filePath: string[]) => {
     setIsProcessing(true);
     try {
@@ -32,19 +36,17 @@ export default function Upload() {
   };
 
   return (
-    <>
-      <TitleBar title="Upload Excel" />
-      <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", p: 3 }}>
-        {isProcessing ? (
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-            <CircularProgress size={60} />
-            <Typography variant="h6" color="text.secondary">
-              正在处理文件...
-            </Typography>
-          </Box>
-        ) : (
-          <ExcelUploader onFileSelect={handleFileSelect} disabled={isProcessing} />
-        )}
-      </Box></>
+    <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", p: 3 }}>
+      {isProcessing ? (
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <CircularProgress size={60} />
+          <Typography variant="h6" color="text.secondary">
+            正在处理文件...
+          </Typography>
+        </Box>
+      ) : (
+        <ExcelUploader onFileSelect={handleFileSelect} disabled={isProcessing} />
+      )}
+    </Box>
   );
 }

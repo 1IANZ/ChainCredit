@@ -1,8 +1,7 @@
 use calamine::{open_workbook_auto, Reader};
-use rust_xlsxwriter::{workbook::Workbook, Format};
+use rust_xlsxwriter::{Format, FormatAlign, Workbook};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CompanyData {
     #[serde(rename = "企业ID")]
@@ -35,7 +34,7 @@ pub struct CompanyData {
     legal_disputes_count: i32,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CompanyWithScore {
     #[serde(flatten)]
     company_data: CompanyData,
@@ -46,7 +45,7 @@ pub struct CompanyWithScore {
     score_details: ScoreDetails,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ScoreDetails {
     financial_score: f64,
     innovation_score: f64,
@@ -63,7 +62,7 @@ pub struct ExcelResult {
     companies: Vec<CompanyWithScore>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CompanyDataEn {
     company_id: String,
     company_name: String,
@@ -81,7 +80,7 @@ pub struct CompanyDataEn {
     legal_disputes_count: i32,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ScoreDetailsEn {
     financial_score: f64,
     innovation_score: f64,
@@ -90,7 +89,7 @@ pub struct ScoreDetailsEn {
     industry_adjustment: f64,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CompanyWithScoreEn {
     company_data: CompanyDataEn,
     credit_score: f64,
@@ -166,7 +165,7 @@ impl From<ExcelResult> for ExcelResultEn {
 }
 
 fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
-    let mut details = ScoreDetails {
+    let mut raw_details = ScoreDetails {
         financial_score: 0.0,
         innovation_score: 0.0,
         supply_chain_score: 0.0,
@@ -174,13 +173,12 @@ fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         industry_adjustment: 0.0,
     };
 
-    // 财务健康度评分 (40分)
     let profit_margin = if company.revenue > 0.0 {
         company.net_profit / company.revenue
     } else {
         0.0
     };
-    details.financial_score += match profit_margin {
+    raw_details.financial_score += match profit_margin {
         x if x >= 0.15 => 15.0,
         x if x >= 0.10 => 12.0,
         x if x >= 0.05 => 8.0,
@@ -188,7 +186,7 @@ fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         _ => 0.0,
     };
 
-    details.financial_score += match company.debt_to_asset_ratio {
+    raw_details.financial_score += match company.debt_to_asset_ratio {
         x if x <= 30.0 => 15.0,
         x if x <= 50.0 => 12.0,
         x if x <= 70.0 => 8.0,
@@ -196,7 +194,7 @@ fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         _ => 0.0,
     };
 
-    details.financial_score += match company.total_assets {
+    raw_details.financial_score += match company.total_assets {
         x if x >= 50000.0 => 10.0,
         x if x >= 20000.0 => 8.0,
         x if x >= 10000.0 => 6.0,
@@ -204,15 +202,14 @@ fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         _ => 2.0,
     };
 
-    // 创新能力评分 (30分)
-    details.innovation_score += match company.r_and_d_ratio {
+    raw_details.innovation_score += match company.r_and_d_ratio {
         x if x >= 15.0 => 15.0,
         x if x >= 10.0 => 12.0,
         x if x >= 5.0 => 8.0,
         x if x >= 3.0 => 5.0,
         _ => 2.0,
     };
-    details.innovation_score += match company.patent_count {
+    raw_details.innovation_score += match company.patent_count {
         x if x >= 50 => 15.0,
         x if x >= 20 => 12.0,
         x if x >= 10 => 9.0,
@@ -220,16 +217,14 @@ fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         x if x >= 1 => 3.0,
         _ => 0.0,
     };
-
-    // 供应链稳定性评分 (20分)
-    details.supply_chain_score += match company.upstream_core_companies {
+    raw_details.supply_chain_score += match company.upstream_core_companies {
         x if x >= 5 => 10.0,
         x if x >= 3 => 8.0,
         x if x >= 2 => 6.0,
         x if x >= 1 => 4.0,
         _ => 0.0,
     };
-    details.supply_chain_score += match company.downstream_customers {
+    raw_details.supply_chain_score += match company.downstream_customers {
         x if x >= 20 => 10.0,
         x if x >= 10 => 8.0,
         x if x >= 5 => 6.0,
@@ -237,14 +232,12 @@ fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         _ => 2.0,
     };
 
-    // 风险记录评分 (10分)
-    details.risk_score = 10.0;
-    details.risk_score -= (company.overdue_count as f64 * 2.0).min(10.0);
-    details.risk_score -= (company.legal_disputes_count as f64 * 3.0).min(10.0);
-    details.risk_score = details.risk_score.max(0.0);
+    raw_details.risk_score = 10.0;
+    raw_details.risk_score -= (company.overdue_count as f64 * 2.0).min(10.0);
+    raw_details.risk_score -= (company.legal_disputes_count as f64 * 3.0).min(10.0);
+    raw_details.risk_score = raw_details.risk_score.max(0.0);
 
-    // 行业调整分 (±5分)
-    details.industry_adjustment = match company.industry.as_str() {
+    raw_details.industry_adjustment = match company.industry.as_str() {
         "人工智能" | "新能源" | "生物医药" | "新材料" => 5.0,
         "高端制造" | "信息技术" | "节能环保" => 3.0,
         "传统制造" | "房地产" => -3.0,
@@ -252,13 +245,22 @@ fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         _ => 0.0,
     };
 
-    let total_score = details.financial_score
-        + details.innovation_score
-        + details.supply_chain_score
-        + details.risk_score
-        + details.industry_adjustment;
+    let total_score = raw_details.financial_score
+        + raw_details.innovation_score
+        + raw_details.supply_chain_score
+        + raw_details.risk_score
+        + raw_details.industry_adjustment;
 
-    (total_score.max(0.0).min(100.0), details)
+    let normalized_details = ScoreDetails {
+        financial_score: (raw_details.financial_score / 40.0) * 100.0,
+        innovation_score: (raw_details.innovation_score / 30.0) * 100.0,
+        supply_chain_score: (raw_details.supply_chain_score / 20.0) * 100.0,
+        risk_score: (raw_details.risk_score / 10.0) * 100.0,
+
+        industry_adjustment: raw_details.industry_adjustment,
+    };
+
+    (total_score.max(0.0).min(100.0), normalized_details)
 }
 
 fn get_credit_rating(score: f64) -> (String, String, String) {
@@ -399,6 +401,7 @@ pub fn process_excel(paths: Vec<String>) -> Result<Vec<ExcelResultEn>, String> {
     let results_cn = process_excel_internal(paths)?;
     Ok(results_cn.into_iter().map(|r| r.into()).collect())
 }
+
 #[tauri::command]
 pub async fn generate_template_excel(
     file_path: String,
@@ -408,50 +411,194 @@ pub async fn generate_template_excel(
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
-    // 创建居中格式
     let center_format = Format::new()
         .set_align(rust_xlsxwriter::FormatAlign::Center)
         .set_align(rust_xlsxwriter::FormatAlign::VerticalCenter);
 
-    // 创建表头格式
     let header_format = Format::new()
         .set_align(rust_xlsxwriter::FormatAlign::Center)
         .set_align(rust_xlsxwriter::FormatAlign::VerticalCenter)
         .set_bold();
 
-    // 写入表头
     for (col, header) in headers.iter().enumerate() {
         worksheet
             .write_string_with_format(0, col as u16, header, &header_format)
-            .map_err(|e| format!("写入表头失败: {}", e))?;
+            .map_err(|e| e.to_string())?;
     }
 
-    // 写入模板数据
     if let Some(template_data) = template_row {
         let data_count = template_data.len().min(headers.len());
         for (col, value) in template_data.iter().take(data_count).enumerate() {
             if let Ok(num) = value.parse::<f64>() {
                 worksheet
                     .write_number_with_format(1, col as u16, num, &center_format)
-                    .map_err(|e| format!("写入数字失败: {}", e))?;
+                    .map_err(|e| e.to_string())?;
             } else {
                 worksheet
                     .write_string_with_format(1, col as u16, value, &center_format)
-                    .map_err(|e| format!("写入字符串失败: {}", e))?;
+                    .map_err(|e| e.to_string())?;
             }
         }
     }
 
-    // 设置列宽
     for col in 0..headers.len() {
         worksheet
             .set_column_width(col as u16, 15.0)
-            .map_err(|e| format!("设置列宽失败: {}", e))?;
+            .map_err(|e| e.to_string())?;
     }
 
-    workbook
-        .save(&file_path)
-        .map_err(|e| format!("保存文件失败: {}", e))?;
+    workbook.save(&file_path).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+#[tauri::command]
+pub async fn generate_single_report(
+    file_path: String,
+    company: CompanyWithScoreEn,
+) -> Result<(), String> {
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+
+    let header_format = Format::new().set_bold().set_font_size(14.0);
+    let key_format = Format::new().set_bold();
+    let value_format = Format::new().set_align(FormatAlign::Left);
+
+    worksheet
+        .set_column_width(0, 20.0)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .set_column_width(1, 30.0)
+        .map_err(|e| e.to_string())?;
+
+    let mut row = 0;
+
+    worksheet
+        .merge_range(
+            row,
+            0,
+            row,
+            1,
+            &format!("{} - 信用评估报告", company.company_data.company_name),
+            &header_format.clone().set_align(FormatAlign::Center),
+        )
+        .map_err(|e| e.to_string())?;
+    row += 2;
+
+    worksheet
+        .write_string_with_format(row, 0, "信用评分", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_number_with_format(row, 1, company.credit_score, &value_format)
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "信用评级", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_string_with_format(row, 1, &company.credit_rating, &value_format)
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "建议信用额度", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_string_with_format(row, 1, &company.credit_limit, &value_format)
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "风险等级", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_string_with_format(row, 1, &company.risk_level, &value_format)
+        .map_err(|e| e.to_string())?;
+    row += 2;
+
+    worksheet
+        .write_string_with_format(row, 0, "各项得分详情 (100分制)", &header_format)
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "财务评分", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_number_with_format(row, 1, company.score_details.financial_score, &value_format)
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "创新评分", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_number_with_format(
+            row,
+            1,
+            company.score_details.innovation_score,
+            &value_format,
+        )
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "供应链评分", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_number_with_format(
+            row,
+            1,
+            company.score_details.supply_chain_score,
+            &value_format,
+        )
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "风险评分", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_number_with_format(row, 1, company.score_details.risk_score, &value_format)
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "行业调整分", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_number_with_format(
+            row,
+            1,
+            company.score_details.industry_adjustment,
+            &value_format,
+        )
+        .map_err(|e| e.to_string())?;
+    row += 2;
+
+    worksheet
+        .write_string_with_format(row, 0, "企业原始数据", &header_format)
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "营业收入(万元)", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_number_with_format(row, 1, company.company_data.revenue, &value_format)
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "净利润(万元)", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_number_with_format(row, 1, company.company_data.net_profit, &value_format)
+        .map_err(|e| e.to_string())?;
+    row += 1;
+    worksheet
+        .write_string_with_format(row, 0, "专利数量", &key_format)
+        .map_err(|e| e.to_string())?;
+    worksheet
+        .write_number_with_format(
+            row,
+            1,
+            company.company_data.patent_count as f64,
+            &value_format,
+        )
+        .map_err(|e| e.to_string())?;
+
+    workbook.save(&file_path).map_err(|e| e.to_string())?;
 
     Ok(())
 }
