@@ -3,6 +3,7 @@ import { useAtom } from "jotai";
 import { useNavigate } from "react-router";
 import DataVisualization from "../components/DataVisualization";
 import { DataAtom } from "../utils/store";
+import TitleBar from "../components/TitleBar";
 
 export default function DataVisualizationPage() {
   const [processedData] = useAtom(DataAtom);
@@ -18,5 +19,8 @@ export default function DataVisualizationPage() {
     return null;
   }
 
-  return <DataVisualization data={processedData} />;
+  return <>
+    <TitleBar title="Main" />
+    <DataVisualization data={processedData} />
+  </>;
 }

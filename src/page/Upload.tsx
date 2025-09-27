@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { useAtom } from "jotai";
 import { DataAtom } from "../utils/store";
+import TitleBar from "../components/TitleBar";
 
 export default function Upload() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -31,17 +32,19 @@ export default function Upload() {
   };
 
   return (
-    <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", p: 3 }}>
-      {isProcessing ? (
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-          <CircularProgress size={60} />
-          <Typography variant="h6" color="text.secondary">
-            正在处理文件...
-          </Typography>
-        </Box>
-      ) : (
-        <ExcelUploader onFileSelect={handleFileSelect} disabled={isProcessing} />
-      )}
-    </Box>
+    <>
+      <TitleBar title="Upload Excel" />
+      <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", p: 3 }}>
+        {isProcessing ? (
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <CircularProgress size={60} />
+            <Typography variant="h6" color="text.secondary">
+              正在处理文件...
+            </Typography>
+          </Box>
+        ) : (
+          <ExcelUploader onFileSelect={handleFileSelect} disabled={isProcessing} />
+        )}
+      </Box></>
   );
 }
