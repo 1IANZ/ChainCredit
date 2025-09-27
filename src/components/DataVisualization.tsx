@@ -1,3 +1,4 @@
 export default function DataVisualization({ data }: any) {
-  return <h1>DataVisualization</h1>;
+  console.log(JSON.stringify(data, null, 2));
+  return <div>数据可视化</div>;
 }

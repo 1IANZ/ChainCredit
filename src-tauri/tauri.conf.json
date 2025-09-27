@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "Login",
+        "title": "Main",
         "width": 800,
         "height": 600,
+        "minWidth": 800,
+        "minHeight": 600,
         "decorations": false,
         "transparent": true,
         "center": true

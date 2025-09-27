@@ -230,13 +230,13 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
   };
 
   return (
-    <Box sx={{ width: "100%", maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ width: "100%", height: "100%", display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Paper
         elevation={0}
         onClick={handleFileClick}
         sx={{
           width: "100%",
-          height: 400,
+          height: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -271,7 +271,6 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
           style={{ display: "none" }}
         />
 
-        {/* 拖拽时的背景层 */}
         <Box
           sx={{
             position: "absolute",
@@ -286,7 +285,6 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
           }}
         />
 
-        {/* 拖拽时的边框效果 */}
         <Box
           sx={{
             position: "absolute",
@@ -381,7 +379,6 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
         </Box>
       </Paper>
 
-      {/* 下载模板按钮 */}
       <Button
         variant="outlined"
         startIcon={<DownloadIcon />}
@@ -389,6 +386,7 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
         disabled={disabled || isGenerating}
         sx={{
           alignSelf: 'center',
+          width: '100%',
           borderRadius: 2,
           textTransform: 'none',
           px: 3,

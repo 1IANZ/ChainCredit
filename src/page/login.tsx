@@ -1,6 +1,5 @@
 import { Box, Button, TextField, Paper, Typography, useTheme } from "@mui/material";
 import TextType from "../components/TextType/TextType";
-import TitleBar from "../components/TitleBar";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -10,23 +9,19 @@ export default function Login() {
   const theme = useTheme();
   const [privateKey, setPrivateKey] = useState<string>("");
   const handleLogin = async () => {
-
-    handleDirectEnter()
-  };
-  const handleDirectEnter = async () => {
     const currentWindow = getCurrentWindow();
     try {
       await currentWindow.setTitle("Main");
-      navigate('/main');
+      navigate('/dashboard');
     } catch (error) {
       console.error("Failed to update window or navigate:", error);
     }
   };
 
 
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <TitleBar title="LOGIN" data-tauri-drag-region />
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
       <Box
         sx={{
           flexGrow: 1,
@@ -90,24 +85,7 @@ export default function Login() {
           >
             私钥登录
           </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{
-              py: 1.5,
-              fontWeight: 'bold',
-              fontSize: '1rem',
-              textTransform: 'none',
-              mt: 2,
-              '&:hover': {
-                boxShadow: `0 5px 15px ${theme.palette.primary.main}60`,
-              }
-            }}
-            onClick={handleDirectEnter}
-          >
-            直接进入
-          </Button>
+
         </Paper>
       </Box>
     </Box >

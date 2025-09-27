@@ -7,14 +7,20 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import ModeToggle from './ModeToggle';
 import CropFreeIcon from '@mui/icons-material/CropFree';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
+import PersonIcon from '@mui/icons-material/Person';
+import { useNavigate } from 'react-router';
 interface TitleBarProps {
   title: string;
 }
 
 export default function TitleBar({ title }: TitleBarProps) {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [appWindow, setAppWindow] = useState<Window | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
+  const handlelogin = () => {
+    navigate('/login');
+  };
 
   useEffect(() => {
     const win = getCurrentWindow();
@@ -75,6 +81,9 @@ export default function TitleBar({ title }: TitleBarProps) {
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, WebkitAppRegion: 'no-drag' }}>
           <ModeToggle />
+          <IconButton onClick={handlelogin} sx={circularButtonStyle}>
+            <PersonIcon />
+          </IconButton>
           <IconButton onClick={handleMinimize} sx={circularButtonStyle}>
             <RemoveIcon />
           </IconButton>
