@@ -213,7 +213,7 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
           '20468',
           '12135',
           '59.3',
-          '7.4',
+          '12',
           '10',
           '3',
           '12',

@@ -18,6 +18,7 @@ interface Props {
   onDownload: () => void;
   isUploading?: boolean;
   onUpload?: () => void;
+  publikKey?: string
 }
 
 export default function CompanyInfoCard({
@@ -25,7 +26,8 @@ export default function CompanyInfoCard({
   isDownloading,
   onDownload,
   isUploading = false,
-  onUpload
+  onUpload,
+  publikKey
 }: Props) {
   return (
     <Card sx={{ mb: 3 }}>
@@ -37,14 +39,16 @@ export default function CompanyInfoCard({
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
 
-            <Button
-              variant="outlined"
-              startIcon={isUploading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
-              onClick={onUpload}
-              disabled={isUploading}
-            >
-              {isUploading ? "上链中..." : "上链存证"}
-            </Button>
+            {publikKey && (
+              <Button
+                variant="contained"
+                startIcon={isUploading ? <CircularProgress size={20} color="inherit" /> : <CloudUploadIcon />}
+                onClick={onUpload}
+                disabled={isUploading}
+              >
+                {isUploading ? "上传中..." : "上传数据"}
+              </Button>
+            )}
 
 
             <Button

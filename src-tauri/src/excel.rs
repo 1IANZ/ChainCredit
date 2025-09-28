@@ -122,7 +122,7 @@ pub async fn generate_single_report(
     row += 2;
 
     worksheet
-        .write_string_with_format(row, 0, "各项得分详情 (100分制)", &header_format)
+        .write_string_with_format(row, 0, "各项得分详情", &header_format)
         .map_err(|e| e.to_string())?;
     row += 1;
     worksheet

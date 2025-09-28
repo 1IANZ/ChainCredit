@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Paper, GlobalStyles, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { invoke } from "@tauri-apps/api/core";
@@ -29,6 +29,21 @@ export default function DataVisualization({ data }: Props) {
   const [chartType, setChartType] = useState<'bar' | 'pie' | 'radar' | 'line'>('bar');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [publicKey, setPublicKey] = useState<string>("");
+
+  useEffect(() => {
+    async function fetchPublicKey() {
+      try {
+        const res: string = await invoke("get_public_key");
+        setPublicKey(res);
+        console.log(publicKey)
+      } catch (error) {
+        console.error("Failed to fetch public key:", error);
+      }
+    }
+
+    fetchPublicKey();
+  }, []);
 
   const handleDownloadReport = async () => {
     if (!selectedCompany) {
@@ -48,7 +63,6 @@ export default function DataVisualization({ data }: Props) {
         setIsDownloading(false);
         return;
       }
-      console.log(selectedCompany);
       await invoke("generate_single_report", {
         filePath,
         company: selectedCompany,
@@ -63,14 +77,12 @@ export default function DataVisualization({ data }: Props) {
     }
   };
 
-
-
-
   const handleUploadOnChain = async () => {
     if (!selectedCompany) {
       toast.warning("请先选择一个公司");
       return;
     }
+
 
     setIsUploading(true);
     try {
@@ -105,7 +117,6 @@ export default function DataVisualization({ data }: Props) {
           overflow: "hidden",
         }}
       >
-
         <Box sx={{ p: 2, flexShrink: 0 }}>
           企业列表 ({allCompanies.length})
         </Box>
@@ -119,7 +130,6 @@ export default function DataVisualization({ data }: Props) {
         </Box>
       </Paper>
 
-
       <Box sx={{ flexGrow: 1, p: 3, overflowY: "auto", height: "calc(100vh - 36px)" }}>
         {selectedCompany && (
           <>
@@ -129,6 +139,7 @@ export default function DataVisualization({ data }: Props) {
               onDownload={handleDownloadReport}
               isUploading={isUploading}
               onUpload={handleUploadOnChain}
+              publikKey={publicKey}
             />
 
             <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
