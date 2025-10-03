@@ -125,10 +125,15 @@ export default function Login() {
             sx={{ mb: 3 }}
             value={privateKey}
             onChange={(e) => setPrivateKey(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleKeyPress(e);
+              }
+            }}
             disabled={isLoading}
             placeholder="请输入您的私钥"
           />
+
 
           <Button
             variant="contained"

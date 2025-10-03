@@ -19,14 +19,17 @@ export default function SearchBar({ searchTerm, setSearchTerm, isRefreshing, onR
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           sx={{ flexGrow: 1 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            },
           }}
         />
+
         <Button
           variant="contained"
           startIcon={isRefreshing ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
