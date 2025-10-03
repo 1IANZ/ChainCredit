@@ -88,6 +88,7 @@ export default function DataVisualization({ data }: Props) {
     try {
       await invoke("upload_on_chain", {
         companyId: selectedCompany.company_data.company_id,
+        companyName: selectedCompany.company_data.company_name,
         creditScore: selectedCompany.credit_score,
         creditRating: selectedCompany.credit_rating,
         creditLimit: selectedCompany.credit_limit,

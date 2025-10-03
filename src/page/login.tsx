@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useAtom } from "jotai";
 import { titleAtom } from "../utils/store";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Box, Button, TextField, Paper, Typography, useTheme, Card, CardContent, CardHeader } from "@mui/material";
+import { Box, Button, TextField, Paper, Typography, useTheme } from "@mui/material";
 import TextType from "../components/TextType/TextType";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
@@ -13,90 +13,141 @@ export default function Login() {
   const navigate = useNavigate();
   const theme = useTheme();
   const [privateKey, setPrivateKey] = useState<string>("");
-  const [publicKey, setPublicKey] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    async function fetchPublicKey() {
-      const res: string = await invoke("get_public_key");
-      setPublicKey(res);
+    async function checkLoginStatus() {
+      try {
+        const publicKey: string = await invoke("get_public_key");
+        if (publicKey) {
+          navigate("/admin", { replace: true });
+        }
+      } catch (error) {
+        console.error("Check login status error:", error);
+      }
     }
 
     setTitle("Login");
-    fetchPublicKey();
+    checkLoginStatus();
 
     return () => setTitle("");
-  }, [setTitle]);
+  }, [setTitle, navigate]);
 
   const handleLogin = async () => {
+    if (!privateKey.trim()) {
+      toast.error("请输入私钥");
+      return;
+    }
+
+    setIsLoading(true);
     const currentWindow = getCurrentWindow();
+
     try {
       const res = await invoke("set_private_key", { secretBase58: privateKey });
+
       if (res === "Error") {
         toast.error("错误: 无效的私钥");
         return;
       }
-      await currentWindow.setTitle("Main");
-      navigate("/dashboard");
+
+      toast.success("登录成功");
+      await currentWindow.setTitle("Admin");
+      navigate("/admin", { replace: true });
     } catch (error) {
-      console.error("Failed to update window or navigate:", error);
+      console.error("Failed to login:", error);
+      toast.error("登录失败，请重试");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleGoBack = () => {
-    navigate(-1);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 64px)", overflow: "hidden" }}>
-      <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "background.default", p: 2 }}>
-        <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", maxWidth: 450, borderRadius: 3, boxSizing: "border-box" }}>
-          <TextType text={["CHAIN CREDIT", "LOGIN"]} as="h1" typingSpeed={75} pauseDuration={1500} showCursor={true} cursorCharacter="|" textColors={[theme.palette.primary.main, theme.palette.secondary.main]} />
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4, textAlign: "center" }}>
-            Access your account with your private key.
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        overflow: "hidden",
+        backgroundColor: "background.default"
+      }}
+    >
+      <Box
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 2
+        }}
+      >
+        <Paper
+          elevation={4}
+          sx={{
+            p: { xs: 3, sm: 4 },
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            maxWidth: 450,
+            borderRadius: 3,
+            boxSizing: "border-box"
+          }}
+        >
+          <TextType
+            text={["CHAIN CREDIT", "LOGIN"]}
+            as="h1"
+            typingSpeed={75}
+            pauseDuration={1500}
+            showCursor={true}
+            cursorCharacter="|"
+            textColors={[theme.palette.primary.main, theme.palette.secondary.main]}
+          />
+
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 4, textAlign: "center" }}
+          >
+            使用您的私钥访问账户
           </Typography>
-          <Button
-            variant="text"
-            color="primary"
+
+          <TextField
+            label="私钥"
+            variant="outlined"
+            type="password"
             fullWidth
             sx={{ mb: 3 }}
-            onClick={handleGoBack}
+            value={privateKey}
+            onChange={(e) => setPrivateKey(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={isLoading}
+            placeholder="请输入您的私钥"
+          />
+
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            disabled={isLoading}
+            sx={{
+              py: 1.5,
+              fontWeight: "bold",
+              fontSize: "1rem",
+              textTransform: "none",
+              "&:hover": {
+                boxShadow: `0 5px 15px ${theme.palette.primary.main}60`
+              }
+            }}
+            onClick={handleLogin}
           >
-            返回
+            {isLoading ? "登录中..." : "登录"}
           </Button>
-          {publicKey ? (
-            <Card sx={{ width: "100%", mb: 3 }}>
-              <CardHeader title="Logged In" />
-              <CardContent>
-                <Typography variant="body1" color="text.primary">
-                  Your public key is:
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all", mt: 1 }}>
-                  {publicKey}
-                </Typography>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <TextField
-                label="Private Key"
-                variant="outlined"
-                type="password"
-                fullWidth
-                sx={{ mb: 3 }}
-                value={privateKey}
-                onChange={(e) => setPrivateKey(e.target.value)}
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                sx={{ py: 1.5, fontWeight: "bold", fontSize: "1rem", textTransform: "none", mt: 2, "&:hover": { boxShadow: `0 5px 15px ${theme.palette.primary.main}60` } }}
-                onClick={handleLogin}
-              >
-                私钥登录
-              </Button>
-            </>
-          )}
         </Paper>
       </Box>
     </Box>

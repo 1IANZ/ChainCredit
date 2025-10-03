@@ -5,6 +5,7 @@ import Upload from "./page/Upload";
 import AppLayout from "./page/AppLayout";
 import Dashboard from "./page/Dashboard";
 import Login from "./page/Login";
+import Admin from "./page/Admin";
 export default function App() {
   const theme = useTheme();
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/" element={<AppLayout />} >
           <Route index element={<Upload />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
       </Routes>
