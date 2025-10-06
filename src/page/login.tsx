@@ -134,24 +134,41 @@ export default function Login() {
           />
 
 
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            disabled={isLoading}
-            sx={{
-              py: 1.5,
-              fontWeight: "bold",
-              fontSize: "1rem",
-              textTransform: "none",
-              "&:hover": {
-                boxShadow: `0 5px 15px ${theme.palette.primary.main}60`
-              }
-            }}
-            onClick={handleLogin}
-          >
-            {isLoading ? "登录中..." : "登录"}
-          </Button>
+          <Box sx={{ display: "flex", gap: 2, width: "100%", mt: 1 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              fullWidth
+              disabled={isLoading}
+              sx={{
+                py: 1.5,
+                fontWeight: "bold",
+                fontSize: "1rem",
+                textTransform: "none",
+              }}
+              onClick={() => navigate("/dashboard", { replace: true })}
+            >
+              暂不登录
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              disabled={isLoading}
+              sx={{
+                py: 1.5,
+                fontWeight: "bold",
+                fontSize: "1rem",
+                textTransform: "none",
+                "&:hover": {
+                  boxShadow: `0 5px 15px ${theme.palette.primary.main}60`
+                }
+              }}
+              onClick={handleLogin}
+            >
+              {isLoading ? "登录中..." : "登录"}
+            </Button>
+          </Box>
         </Paper>
       </Box>
     </Box>
