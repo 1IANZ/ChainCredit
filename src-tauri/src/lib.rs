@@ -1,6 +1,5 @@
 mod excel;
 mod solana;
-
 use excel::*;
 use solana::*;
 
@@ -9,13 +8,18 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .manage(Wallet::new())
+        .manage(Wallet::default())
         .invoke_handler(tauri::generate_handler![
             process_excel,
             generate_template_excel,
             generate_single_report,
             set_private_key,
-            get_public_key
+            get_public_key,
+            initialize_company,
+            update_company,
+            delete_company,
+            get_all_companies,
+            clear_private_key
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

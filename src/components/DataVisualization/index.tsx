@@ -36,9 +36,8 @@ export default function DataVisualization({ data }: Props) {
       try {
         const res: string = await invoke("get_public_key");
         setPublicKey(res);
-        console.log(publicKey)
       } catch (error) {
-        console.error("Failed to fetch public key:", error);
+
       }
     }
 
@@ -70,7 +69,6 @@ export default function DataVisualization({ data }: Props) {
 
       toast.success("报告生成成功");
     } catch (error) {
-      console.log(error);
       toast.error("生成报告失败");
     } finally {
       setIsDownloading(false);
@@ -86,7 +84,7 @@ export default function DataVisualization({ data }: Props) {
 
     setIsUploading(true);
     try {
-      await invoke("upload_on_chain", {
+      await invoke("initialize_company", {
         companyId: selectedCompany.company_data.company_id,
         companyName: selectedCompany.company_data.company_name,
         creditScore: selectedCompany.credit_score,
@@ -94,6 +92,7 @@ export default function DataVisualization({ data }: Props) {
         creditLimit: selectedCompany.credit_limit,
         riskLevel: selectedCompany.risk_level,
       });
+
       toast.success("上链成功");
     } catch (error) {
       toast.error("上链失败");

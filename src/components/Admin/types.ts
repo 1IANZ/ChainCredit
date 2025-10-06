@@ -3,10 +3,10 @@ export interface CompanyChainData {
   company_name: string;
   credit_score: number;
   credit_rating: string;
-  credit_limit: number;
+  credit_limit: string;
   risk_level: string;
   timestamp?: number;
-  transaction_hash?: string;
+  authority: string;
 }
 
 export type SortField = keyof CompanyChainData;

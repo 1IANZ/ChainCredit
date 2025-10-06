@@ -5,30 +5,31 @@ import {
 import {
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon
 } from "@mui/icons-material";
-import { CompanyChainData, SortField, SortOrder } from "./types";
+import { CompanyChainData, SortOrder } from "./types";
 import { getRatingColor, getRiskLevelColor } from "../../components/DataVisualization/utils";
 
 interface Props {
   companies: CompanyChainData[];
   filteredCompanies: CompanyChainData[];
-  sortField: SortField;
   sortOrder: SortOrder;
-  onSort: (field: SortField) => void;
+  onSort: () => void;
   onViewDetail: (c: CompanyChainData) => void;
-  onDelete: (id: string) => void;
+  onEdit: (c: CompanyChainData) => void;
+  onDelete: (c: CompanyChainData) => void;  // 修改：传递整个 company 对象
   searchTerm: string;
 }
 
 export default function CompanyTable({
   companies,
   filteredCompanies,
-  sortField,
   sortOrder,
   onSort,
   onViewDetail,
+  onEdit,
   onDelete,
   searchTerm
 }: Props) {
@@ -44,43 +45,19 @@ export default function CompanyTable({
         <Table stickyHeader>
           <TableHead>
             <TableRow>
+              <TableCell>企业ID</TableCell>
+              <TableCell>企业名称</TableCell>
               <TableCell>
                 <TableSortLabel
-                  active={sortField === "company_id"}
-                  direction={sortField === "company_id" ? sortOrder : "asc"}
-                  onClick={() => onSort("company_id")}
-                >
-                  企业ID
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={sortField === "company_name"}
-                  direction={sortField === "company_name" ? sortOrder : "asc"}
-                  onClick={() => onSort("company_name")}
-                >
-                  企业名称
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={sortField === "credit_score"}
-                  direction={sortField === "credit_score" ? sortOrder : "asc"}
-                  onClick={() => onSort("credit_score")}
+                  active={true}
+                  direction={sortOrder}
+                  onClick={onSort}
                 >
                   信用分数
                 </TableSortLabel>
               </TableCell>
               <TableCell>信用评级</TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={sortField === "credit_limit"}
-                  direction={sortField === "credit_limit" ? sortOrder : "asc"}
-                  onClick={() => onSort("credit_limit")}
-                >
-                  信用额度(万元)
-                </TableSortLabel>
-              </TableCell>
+              <TableCell>信用额度(元)</TableCell>
               <TableCell>风险等级</TableCell>
               <TableCell>操作</TableCell>
             </TableRow>
@@ -130,7 +107,7 @@ export default function CompanyTable({
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      ¥{(company.credit_limit / 10000).toFixed(2)}万
+                      ¥{company.credit_limit}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -145,24 +122,34 @@ export default function CompanyTable({
                     />
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<VisibilityIcon />}
-                      onClick={() => onViewDetail(company)}
-                      sx={{ mr: 1 }}
-                    >
-                      详情
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      variant="outlined"
-                      startIcon={<DeleteIcon />}
-                      onClick={() => onDelete(company.company_id)}
-                    >
-                      删除
-                    </Button>
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<VisibilityIcon />}
+                        onClick={() => onViewDetail(company)}
+                      >
+                        详情
+                      </Button>
+                      <Button
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => onEdit(company)}
+                      >
+                        修改
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => onDelete(company)}
+                      >
+                        删除
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))

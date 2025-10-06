@@ -1,9 +1,14 @@
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Typography, Box, Button, Card, CardContent, Divider, Chip, Tooltip, Alert
+  Typography, Box, Button, Card, CardContent, Divider, Chip, Alert
 } from "@mui/material";
-import { Business as BusinessIcon, Warning as WarningIcon } from "@mui/icons-material";
-import { toast } from "sonner";
+import {
+  Business as BusinessIcon,
+  Warning as WarningIcon,
+  CheckCircle as CheckCircleIcon,
+  Info as InfoIcon
+} from "@mui/icons-material";
+
 import { CompanyChainData } from "./types";
 import { getRatingColor, getRiskLevelColor, getCreditStrategy } from "../../components/DataVisualization/utils";
 
@@ -15,6 +20,12 @@ interface Props {
 
 export default function CompanyDetailDialog({ open, onClose, company }: Props) {
   if (!company) return null;
+  const normalizedRiskLevel = company.risk_level?.trim();
+  const isHighRisk = normalizedRiskLevel === "高" || normalizedRiskLevel === "极高";
+  const isMediumRisk = normalizedRiskLevel === "中" || normalizedRiskLevel === "中等";
+  const isLowRisk = normalizedRiskLevel === "低" || normalizedRiskLevel === "极低";
+  const isExcellent = company.credit_score >= 85 && isLowRisk;
+  const needAttention = isMediumRisk || (company.credit_score < 70 && !isHighRisk);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -72,7 +83,7 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
                     信用额度
                   </Typography>
                   <Typography variant="h6" color="success.main">
-                    ¥{(company.credit_limit / 10000).toFixed(2)} 万元
+                    {company.credit_limit}
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: "right" }}>
@@ -113,63 +124,52 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
           </Card>
 
           {/* 链上信息 */}
-          {(company.timestamp || company.transaction_hash) && (
+          {company.timestamp && (
             <Card variant="outlined">
               <CardContent>
                 <Typography variant="h6" gutterBottom color="primary">
                   链上信息
                 </Typography>
-                {company.timestamp && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      上链时间
-                    </Typography>
-                    <Typography variant="body1">
-                      {new Date(company.timestamp * 1000).toLocaleString("zh-CN", {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })}
-                    </Typography>
-                  </Box>
-                )}
-                {company.transaction_hash && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      交易哈希
-                    </Typography>
-                    <Tooltip title="点击复制">
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontFamily: "monospace",
-                          wordBreak: "break-all",
-                          backgroundColor: "action.hover",
-                          p: 1,
-                          borderRadius: 1,
-                          cursor: "pointer",
-                          "&:hover": { backgroundColor: "action.selected" },
-                        }}
-                        onClick={() => {
-                          navigator.clipboard.writeText(company.transaction_hash || "");
-                          toast.success("交易哈希已复制");
-                        }}
-                      >
-                        {company.transaction_hash}
-                      </Typography>
-                    </Tooltip>
-                  </Box>
-                )}
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    上链时间
+                  </Typography>
+                  <Typography variant="body1">
+                    {new Date(company.timestamp * 1000).toLocaleString("zh-CN", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    授权地址
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontFamily: 'monospace',
+                      wordBreak: 'break-all',
+                      fontSize: '0.75rem'
+                    }}
+                  >
+                    {company.authority}
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
           )}
 
-          {/* 风险提示 */}
-          {(company.risk_level === "高" || company.risk_level === "极高") && (
-            <Alert severity="warning" icon={<WarningIcon />}>
+          {/* 高风险警告 */}
+          {isHighRisk && (
+            <Alert
+              severity="warning"
+              icon={<WarningIcon />}
+            >
               <Typography variant="body2">
                 该企业风险等级为 <strong>{company.risk_level}</strong>，建议谨慎授信，
                 {company.credit_score < 60 && "信用分数低于60分，"}
@@ -178,8 +178,26 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
             </Alert>
           )}
 
-          {company.credit_score >= 85 && company.risk_level === "低" && (
-            <Alert severity="success">
+          {/* 中风险提示 */}
+          {needAttention && (
+            <Alert
+              severity="info"
+              icon={<InfoIcon />}
+            >
+              <Typography variant="body2">
+                该企业风险等级为 <strong>{company.risk_level}</strong>
+                {company.credit_score < 70 && `，信用分数为 ${company.credit_score} 分`}
+                ，建议适度授信，加强贷后管理和风险监控。
+              </Typography>
+            </Alert>
+          )}
+
+          {/* 优质企业提示 */}
+          {isExcellent && (
+            <Alert
+              severity="success"
+              icon={<CheckCircleIcon />}
+            >
               <Typography variant="body2">
                 该企业信用状况优秀，风险等级低，可以提供优惠的授信条件。
               </Typography>
@@ -189,14 +207,8 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose}>关闭</Button>
-        <Button
-          variant="contained"
-          onClick={() => {
-            toast.info("导出功能开发中");
-          }}
-        >
-          导出报告
+        <Button onClick={onClose} variant="contained">
+          关闭
         </Button>
       </DialogActions>
     </Dialog>

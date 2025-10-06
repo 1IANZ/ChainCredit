@@ -11,7 +11,6 @@ interface StatsProps {
     totalCompanies: number;
     avgCreditScore: number;
     highRiskCount: number;
-    totalCreditLimit: number;
     excellentRating: number;
   };
 }
@@ -19,6 +18,7 @@ interface StatsProps {
 export default function StatsCards({ stats }: StatsProps) {
   return (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3 }}>
+      {/* 链上企业总数 */}
       <Card sx={{ flex: "1 1 220px", minWidth: "220px" }}>
         <CardContent>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -33,6 +33,7 @@ export default function StatsCards({ stats }: StatsProps) {
         </CardContent>
       </Card>
 
+      {/* 平均信用分 */}
       <Card sx={{ flex: "1 1 220px", minWidth: "220px" }}>
         <CardContent>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -47,6 +48,7 @@ export default function StatsCards({ stats }: StatsProps) {
         </CardContent>
       </Card>
 
+      {/* 优质企业 */}
       <Card sx={{ flex: "1 1 220px", minWidth: "220px" }}>
         <CardContent>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -63,6 +65,7 @@ export default function StatsCards({ stats }: StatsProps) {
         </CardContent>
       </Card>
 
+      {/* 高风险企业 */}
       <Card sx={{ flex: "1 1 220px", minWidth: "220px" }}>
         <CardContent>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -75,20 +78,6 @@ export default function StatsCards({ stats }: StatsProps) {
               </Typography>
             </Box>
             <WarningIcon color="error" sx={{ fontSize: 48, opacity: 0.3 }} />
-          </Box>
-        </CardContent>
-      </Card>
-
-      <Card sx={{ flex: "1 1 220px", minWidth: "220px" }}>
-        <CardContent>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Box>
-              <Typography color="text.secondary" variant="body2">
-                总信用额度(万元)
-              </Typography>
-              <Typography variant="h4">{(stats.totalCreditLimit / 10000).toFixed(0)}</Typography>
-            </Box>
-            <TrendingUpIcon color="info" sx={{ fontSize: 48, opacity: 0.3 }} />
           </Box>
         </CardContent>
       </Card>
