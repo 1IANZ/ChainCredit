@@ -1,8 +1,6 @@
+use crate::excel::types::{CompanyData, CompanyWithScore, ExcelResult, ScoreDetails};
 use calamine::{open_workbook_auto, Reader};
 use std::collections::HashMap;
-
-use crate::excel::types::{CompanyData, CompanyWithScore, ExcelResult, ScoreDetails};
-
 pub fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
     let mut raw_details = ScoreDetails {
         financial_score: 0.0,
@@ -12,6 +10,7 @@ pub fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         industry_adjustment: 0.0,
     };
 
+    // 财务评分
     let profit_margin = if company.revenue > 0.0 {
         company.net_profit / company.revenue
     } else {
@@ -24,7 +23,6 @@ pub fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         x if x >= 0.0 => 5.0,
         _ => 0.0,
     };
-
     raw_details.financial_score += match company.debt_to_asset_ratio {
         x if x <= 30.0 => 15.0,
         x if x <= 50.0 => 12.0,
@@ -32,7 +30,6 @@ pub fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         x if x <= 85.0 => 4.0,
         _ => 0.0,
     };
-
     raw_details.financial_score += match company.total_assets {
         x if x >= 50000.0 => 10.0,
         x if x >= 20000.0 => 8.0,
@@ -41,6 +38,7 @@ pub fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         _ => 2.0,
     };
 
+    // 创新评分
     raw_details.innovation_score += match company.r_and_d_ratio {
         x if x >= 15.0 => 15.0,
         x if x >= 10.0 => 12.0,
@@ -56,6 +54,8 @@ pub fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         x if x >= 1 => 3.0,
         _ => 0.0,
     };
+
+    // 供应链评分
     raw_details.supply_chain_score += match company.upstream_core_companies {
         x if x >= 5 => 10.0,
         x if x >= 3 => 8.0,
@@ -71,11 +71,13 @@ pub fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         _ => 2.0,
     };
 
-    raw_details.risk_score = 10.0;
-    raw_details.risk_score -= (company.overdue_count as f64 * 2.0).min(10.0);
-    raw_details.risk_score -= (company.legal_disputes_count as f64 * 3.0).min(10.0);
-    raw_details.risk_score = raw_details.risk_score.max(0.0);
+    // 风险评分
+    let mut risk_score = 10.0;
+    risk_score -= 2.0 * (company.overdue_count as f64).min(5.0).sqrt();
+    risk_score -= 3.0 * (company.legal_disputes_count as f64).min(5.0).sqrt();
+    raw_details.risk_score = risk_score.max(2.0);
 
+    // 行业调整分
     raw_details.industry_adjustment = match company.industry.as_str() {
         "人工智能" | "新能源" | "生物医药" | "新材料" => 5.0,
         "高端制造" | "信息技术" | "节能环保" => 3.0,
@@ -90,12 +92,12 @@ pub fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
         + raw_details.risk_score
         + raw_details.industry_adjustment;
 
+    // 归一化百分制显示
     let normalized_details = ScoreDetails {
         financial_score: (raw_details.financial_score / 40.0) * 100.0,
         innovation_score: (raw_details.innovation_score / 30.0) * 100.0,
         supply_chain_score: (raw_details.supply_chain_score / 20.0) * 100.0,
         risk_score: (raw_details.risk_score / 10.0) * 100.0,
-
         industry_adjustment: raw_details.industry_adjustment,
     };
 
