@@ -25,7 +25,7 @@ export default function Upload() {
     try {
       const res: ExcelResult[] = await invoke("process_excel", { paths: filePath });
       if (res.length === 0) {
-        toast.error("处理失败，返回数据为空或无效");
+        toast.error("处理失败,返回数据为空或无效");
         return;
       }
       setProcessedData(res);

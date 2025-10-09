@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Box, Paper, GlobalStyles, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import {
+  Box,
+  Paper,
+  GlobalStyles,
+  ToggleButton,
+  ToggleButtonGroup,
+  Fab,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
@@ -12,10 +19,20 @@ import CompanyInfoCard from "./CompanyInfoCard";
 import ScoreChart from "./ScoreChart";
 import KeyMetricsCard from "./KeyMetricsCard";
 import RiskMetricsCard from "./RiskMetricsCard";
+import CreditStrategyCard from "./CreditStrategyCard";
+
 import { scrollbarStyles } from "./utils";
 
-import { BarChart as BarChartIcon, PieChart as PieChartIcon, Timeline as LineChartIcon, Radar as RadarIcon } from "@mui/icons-material";
-import CreditStrategyCard from "./CreditStrategyCard";
+import {
+  BarChart as BarChartIcon,
+  PieChart as PieChartIcon,
+  Timeline as LineChartIcon,
+  Radar as RadarIcon,
+  SmartToy as SmartToyIcon,
+} from "@mui/icons-material";
+
+import AIChatDrawer from "./AIChatDrawer";
+import { Message } from "../AIAssistant/types";
 
 interface Props {
   data: ExcelResult[];
@@ -24,7 +41,6 @@ interface Props {
 export default function DataVisualization({ data }: Props) {
   const theme = useTheme();
   const allCompanies: Company[] = data.flatMap(result => result.companies || []);
-
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(allCompanies[0] || null);
   const [chartType, setChartType] = useState<'bar' | 'pie' | 'radar' | 'line'>('bar');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -32,8 +48,12 @@ export default function DataVisualization({ data }: Props) {
   const [publicKey, setPublicKey] = useState<string>("");
   const [isSubmittingBank, setIsSubmittingBank] = useState(false);
   const [bankCreditLimit, setBankCreditLimit] = useState<number | null>(null);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [aiMessages, setAiMessages] = useState<Message[]>([]);
+
 
   useEffect(() => {
+    setAiMessages([]);
     if (!selectedCompany) {
       setBankCreditLimit(null);
       return;
@@ -59,7 +79,7 @@ export default function DataVisualization({ data }: Props) {
         const res: string = await invoke("get_public_key");
         setPublicKey(res);
       } catch (error) {
-
+        // ignore
       }
     }
 
@@ -83,14 +103,13 @@ export default function DataVisualization({ data }: Props) {
         riskLevel: selectedCompany.risk_level,
       });
       setBankCreditLimit(limit);
-      toast.success(`河北银行批复额度：${limit} 万元`);
+      toast.success(`河北银行批复额度:${limit} 万元`);
     } catch {
-      toast.error("提交失败，请稍后重试");
+      toast.error("提交失败,请稍后重试");
     } finally {
       setIsSubmittingBank(false);
     }
   };
-
 
   const handleFetchBankLimit = async () => {
     if (!selectedCompany) return;
@@ -101,15 +120,14 @@ export default function DataVisualization({ data }: Props) {
       });
       if (limit !== null) {
         setBankCreditLimit(limit);
-        toast.success(`河北银行批复额度：${limit} 万元`);
+        toast.success(`河北银行批复额度:${limit} 万元`);
       } else {
-        toast.info("当前公司暂无批复额度，请先提交至河北银行");
+        toast.info("当前公司暂无批复额度,请先提交至河北银行");
       }
     } catch (error) {
       toast.error("获取河北银行批复额度失败");
     }
   };
-
 
   const handleDownloadReport = async () => {
     if (!selectedCompany) {
@@ -148,7 +166,6 @@ export default function DataVisualization({ data }: Props) {
       return;
     }
 
-
     setIsUploading(true);
     try {
       await invoke("initialize_company", {
@@ -169,8 +186,9 @@ export default function DataVisualization({ data }: Props) {
   };
 
   return (
-    <Box sx={{ display: "flex", height: "100vh", bgcolor: 'background.default', overflow: 'hidden' }}>
+    <Box sx={{ display: "flex", height: "100vh", bgcolor: 'background.default', overflow: 'hidden', position: 'relative' }}>
       <GlobalStyles styles={scrollbarStyles(theme)} />
+
 
       <Paper
         elevation={2}
@@ -198,7 +216,16 @@ export default function DataVisualization({ data }: Props) {
         </Box>
       </Paper>
 
-      <Box sx={{ flexGrow: 1, p: 3, overflowY: "auto", height: "calc(100vh - 36px)" }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          overflowY: "auto",
+          overflowX: "hidden",
+          height: "100vh",
+          minWidth: 0
+        }}
+      >
         {selectedCompany && (
           <>
             <CompanyInfoCard
@@ -220,6 +247,7 @@ export default function DataVisualization({ data }: Props) {
                 exclusive
                 onChange={(_e, newType) => newType && setChartType(newType)}
                 aria-label="chart type"
+                sx={{ flexWrap: 'wrap' }}
               >
                 <ToggleButton value="bar">
                   <BarChartIcon sx={{ mr: 1 }} />维度得分
@@ -248,6 +276,49 @@ export default function DataVisualization({ data }: Props) {
           </>
         )}
       </Box>
+
+
+      <Fab
+        color="secondary"
+        sx={{
+          position: 'fixed',
+          bottom: 32,
+          right: 32,
+          zIndex: 1300,
+          boxShadow: 4,
+          '&:hover': {
+            transform: 'scale(1.1)',
+            transition: 'transform 0.2s'
+          }
+        }}
+        onClick={() => setAiDrawerOpen(true)}
+      >
+        <SmartToyIcon />
+      </Fab>
+
+
+      <Fab
+        color="secondary"
+        sx={{
+          position: 'fixed',
+          bottom: 32,
+          right: 32,
+          zIndex: 1300,
+          boxShadow: 4,
+          '&:hover': { transform: 'scale(1.1)', transition: 'transform 0.2s' }
+        }}
+        onClick={() => setAiDrawerOpen(true)}
+      >
+        <SmartToyIcon />
+      </Fab>
+
+      <AIChatDrawer
+        open={aiDrawerOpen}
+        onClose={() => setAiDrawerOpen(false)}
+        company={selectedCompany}
+        messages={aiMessages}
+        setMessages={setAiMessages}
+      />
     </Box>
   );
 }

@@ -139,7 +139,7 @@ export default function CompanyEditDialog({ open, onClose, company, onUpdate }: 
       <DialogContent dividers>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, py: 2 }}>
           <Alert severity="info">
-            修改企业信息将更新区块链上的数据，请仔细核对后提交。
+            修改企业信息将更新区块链上的数据,请仔细核对后提交。
           </Alert>
 
           <TextField

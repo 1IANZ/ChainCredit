@@ -23,7 +23,7 @@ export default function Login() {
           navigate("/admin", { replace: true });
         }
       } catch (error) {
-        toast.error("登录失败，请重试");
+        toast.error("登录失败,请重试");
       }
     }
 
@@ -54,7 +54,7 @@ export default function Login() {
       await currentWindow.setTitle("Admin");
       navigate("/admin", { replace: true });
     } catch (error) {
-      toast.error("登录失败，请重试");
+      toast.error("登录失败,请重试");
     } finally {
       setIsLoading(false);
     }

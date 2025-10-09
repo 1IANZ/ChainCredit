@@ -171,8 +171,8 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
               icon={<WarningIcon />}
             >
               <Typography variant="body2">
-                该企业风险等级为 <strong>{company.risk_level}</strong>，建议谨慎授信，
-                {company.credit_score < 60 && "信用分数低于60分，"}
+                该企业风险等级为 <strong>{company.risk_level}</strong>,建议谨慎授信,
+                {company.credit_score < 60 && "信用分数低于60分,"}
                 建议采取保守的授信策略或要求额外担保。
               </Typography>
             </Alert>
@@ -186,8 +186,8 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
             >
               <Typography variant="body2">
                 该企业风险等级为 <strong>{company.risk_level}</strong>
-                {company.credit_score < 70 && `，信用分数为 ${company.credit_score} 分`}
-                ，建议适度授信，加强贷后管理和风险监控。
+                {company.credit_score < 70 && `,信用分数为 ${company.credit_score} 分`}
+                ,建议适度授信,加强贷后管理和风险监控。
               </Typography>
             </Alert>
           )}
@@ -199,7 +199,7 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
               icon={<CheckCircleIcon />}
             >
               <Typography variant="body2">
-                该企业信用状况优秀，风险等级低，可以提供优惠的授信条件。
+                该企业信用状况优秀,风险等级低,可以提供优惠的授信条件。
               </Typography>
             </Alert>
           )}

@@ -119,12 +119,113 @@ pub fn get_credit_rating(score: f64) -> (String, String, String) {
     }
 }
 
-pub fn process_excel_internal(paths: Vec<String>) -> Result<Vec<ExcelResult>, String> {
-    let mut all_results = Vec::new();
+pub fn extract_companies_from_excel(paths: Vec<String>) -> Result<Vec<CompanyData>, String> {
+    let mut all_companies = Vec::new();
 
     for path in paths {
         let mut workbook =
             open_workbook_auto(&path).map_err(|e| format!("无法打开文件 {}: {}", path, e))?;
+
+        for sheet_name in workbook.sheet_names().to_owned() {
+            let range = workbook
+                .worksheet_range(&sheet_name)
+                .map_err(|e| format!("读取工作表 {} 失败: {}", sheet_name, e))?;
+
+            if range.is_empty() {
+                continue;
+            }
+
+            let mut rows = range.rows();
+            let headers: Vec<String> = match rows.next() {
+                Some(header_row) => header_row.iter().map(|c| c.to_string()).collect(),
+                None => continue,
+            };
+
+            let header_map: HashMap<String, usize> = headers
+                .iter()
+                .enumerate()
+                .map(|(i, h)| (h.trim().to_string(), i))
+                .collect();
+
+            for row in rows {
+                let mut row_data = HashMap::new();
+                for (col_name, &col_idx) in &header_map {
+                    if col_idx < row.len() {
+                        row_data.insert(col_name.clone(), row[col_idx].to_string());
+                    }
+                }
+
+                let company = parse_company_from_row(&row_data);
+
+                if !company.company_id.is_empty() || !company.company_name.is_empty() {
+                    all_companies.push(company);
+                }
+            }
+        }
+    }
+
+    Ok(all_companies)
+}
+
+fn parse_company_from_row(row_data: &HashMap<String, String>) -> CompanyData {
+    CompanyData {
+        company_id: row_data.get("企业ID").cloned().unwrap_or_default(),
+        company_name: row_data.get("企业名称").cloned().unwrap_or_default(),
+        industry: row_data.get("行业").cloned().unwrap_or_default(),
+        revenue: row_data
+            .get("营业收入(万元)")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0.0),
+        net_profit: row_data
+            .get("净利润(万元)")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0.0),
+        total_assets: row_data
+            .get("资产总额(万元)")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0.0),
+        total_liabilities: row_data
+            .get("负债总额(万元)")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0.0),
+        debt_to_asset_ratio: row_data
+            .get("资产负债率(%)")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0.0),
+        r_and_d_ratio: row_data
+            .get("研发投入占比(%)")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0.0),
+        patent_count: row_data
+            .get("专利数量")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
+        upstream_core_companies: row_data
+            .get("上游核心企业数量")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
+        downstream_customers: row_data
+            .get("下游客户数量")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
+        overdue_count: row_data
+            .get("历史逾期次数")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
+        legal_disputes_count: row_data
+            .get("法律诉讼次数")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0),
+    }
+}
+
+pub fn process_excel_internal(paths: Vec<String>) -> Result<Vec<ExcelResult>, String> {
+    let mut all_results = Vec::new();
+    let mut path_to_companies: HashMap<String, HashMap<String, Vec<CompanyData>>> = HashMap::new();
+
+    for path in &paths {
+        let mut workbook =
+            open_workbook_auto(path).map_err(|e| format!("无法打开文件 {}: {}", path, e))?;
 
         for sheet_name in workbook.sheet_names().to_owned() {
             let range = workbook
@@ -157,81 +258,50 @@ pub fn process_excel_internal(paths: Vec<String>) -> Result<Vec<ExcelResult>, St
                     }
                 }
 
-                let company = CompanyData {
-                    company_id: row_data.get("企业ID").cloned().unwrap_or_default(),
-                    company_name: row_data.get("企业名称").cloned().unwrap_or_default(),
-                    industry: row_data.get("行业").cloned().unwrap_or_default(),
-                    revenue: row_data
-                        .get("营业收入(万元)")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0.0),
-                    net_profit: row_data
-                        .get("净利润(万元)")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0.0),
-                    total_assets: row_data
-                        .get("资产总额(万元)")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0.0),
-                    total_liabilities: row_data
-                        .get("负债总额(万元)")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0.0),
-                    debt_to_asset_ratio: row_data
-                        .get("资产负债率(%)")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0.0),
-                    r_and_d_ratio: row_data
-                        .get("研发投入占比(%)")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0.0),
-                    patent_count: row_data
-                        .get("专利数量")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0),
-                    upstream_core_companies: row_data
-                        .get("上游核心企业数量")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0),
-                    downstream_customers: row_data
-                        .get("下游客户数量")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0),
-                    overdue_count: row_data
-                        .get("历史逾期次数")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0),
-                    legal_disputes_count: row_data
-                        .get("法律诉讼次数")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0),
-                };
+                let company = parse_company_from_row(&row_data);
 
                 if company.company_id.is_empty() && company.company_name.is_empty() {
                     continue;
                 }
 
-                let (credit_score, score_details) = calculate_credit_score(&company);
-                let (credit_rating, credit_limit, risk_level) = get_credit_rating(credit_score);
-
-                companies.push(CompanyWithScore {
-                    company_data: company,
-                    credit_score,
-                    credit_rating,
-                    credit_limit,
-                    risk_level,
-                    score_details,
-                });
+                companies.push(company);
             }
 
             if !companies.is_empty() {
-                all_results.push(ExcelResult {
-                    file: path.clone(),
-                    sheet_name,
-                    total_companies: companies.len(),
-                    companies,
-                });
+                path_to_companies
+                    .entry(path.clone())
+                    .or_insert_with(HashMap::new)
+                    .insert(sheet_name, companies);
             }
+        }
+    }
+
+    // 处理每个文件的每个 sheet
+    for (path, sheets) in path_to_companies {
+        for (sheet_name, companies) in sheets {
+            let companies_with_score: Vec<CompanyWithScore> = companies
+                .into_iter()
+                .map(|company| {
+                    let (credit_score, score_details) = calculate_credit_score(&company);
+                    let (credit_rating, credit_limit, risk_level) = get_credit_rating(credit_score);
+
+                    CompanyWithScore {
+                        company_data: company,
+                        credit_score,
+                        credit_rating,
+                        credit_limit,
+                        risk_level,
+                        score_details,
+                    }
+                })
+                .collect();
+
+            all_results.push(ExcelResult {
+                file: path.clone(),
+                sheet_name,
+                total_companies: companies_with_score.len(),
+                companies: companies_with_score,
+            });
         }
     }
 

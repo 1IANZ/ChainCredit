@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use crate::excel::calc::parse_credit_limit;
-use crate::excel::types::CompanyWithScoreEn;
+use crate::excel::calc::{extract_companies_from_excel, parse_credit_limit};
+use crate::excel::types::{CompanyData, CompanyWithScoreEn, ExcelResult};
 use crate::excel::{calc::process_excel_internal, types::ExcelResultEn};
 use rust_xlsxwriter::{Format, FormatAlign, Workbook};
 use tokio::sync::Mutex;
@@ -219,7 +219,24 @@ pub async fn generate_single_report(
 
     Ok(())
 }
-
+#[tauri::command]
+pub fn get_companies_raw_data(paths: Vec<String>) -> Result<Vec<CompanyData>, String> {
+    extract_companies_from_excel(paths)
+}
+#[tauri::command]
+pub fn get_company_by_id(
+    company_id: String,
+    all_results: Vec<ExcelResult>,
+) -> Result<Option<types::CompanyData>, String> {
+    for result in all_results {
+        for company in result.companies {
+            if company.company_data.company_id == company_id {
+                return Ok(Some(company.company_data));
+            }
+        }
+    }
+    Ok(None)
+}
 #[tauri::command]
 pub async fn submit_to_bank(
     company_id: String,
@@ -230,7 +247,7 @@ pub async fn submit_to_bank(
     risk_level: String,
 ) -> Result<f64, String> {
     println!(
-        "[河北银行] 收到提交请求：公司ID={}，名称={}，评分={}，评级={}，额度={}，风险等级={}",
+        "[河北银行] 收到提交请求:公司ID={},名称={},评分={},评级={},额度={},风险等级={}",
         company_id, company_name, credit_score, credit_rating, credit_limit, risk_level
     );
     let mut db = BANK_LIMIT_DB.lock().await;
@@ -266,7 +283,7 @@ pub async fn submit_to_bank(
     db.insert(company_id.clone(), approved_limit);
 
     println!(
-        "[河北银行] 批复完成：公司={}，额度={} 万元",
+        "[河北银行] 批复完成:公司={},额度={} 万元",
         company_name, approved_limit
     );
 

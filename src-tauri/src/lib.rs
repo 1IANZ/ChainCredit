@@ -1,5 +1,7 @@
+mod ai;
 mod excel;
 mod solana;
+use ai::*;
 use excel::*;
 use solana::*;
 
@@ -20,8 +22,11 @@ pub fn run() {
             delete_company,
             get_all_companies,
             clear_private_key,
+            get_companies_raw_data,
+            get_company_by_id,
             submit_to_bank,
-            get_bank_credit_limit
+            get_bank_credit_limit,
+            call_deepseek_api_stream
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

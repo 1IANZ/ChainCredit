@@ -41,7 +41,7 @@ export default function CompanyInfoCard({
   return (
     <Card sx={{ mb: 3 }}>
       <CardContent>
-        {/* 顶部：公司名称和操作按钮 */}
+        {/* 顶部:公司名称和操作按钮 */}
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           justifyContent="space-between"
@@ -98,7 +98,7 @@ export default function CompanyInfoCard({
                 }}
               >
                 <Typography variant="body2" fontWeight="bold">
-                  银行额度：{bankCreditLimit}万元
+                  银行额度:{bankCreditLimit}万元
                 </Typography>
               </Box>
             )}
@@ -139,7 +139,7 @@ export default function CompanyInfoCard({
 
         <Divider sx={{ my: 2 }} />
 
-        {/* 底部：信用信息展示 */}
+        {/* 底部:信用信息展示 */}
         <Box
           sx={{
             display: 'grid',

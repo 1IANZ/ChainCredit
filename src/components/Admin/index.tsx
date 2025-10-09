@@ -202,7 +202,7 @@ export default function Admin() {
       setDeleteTarget(null);
     } catch (error) {
       console.error("删除失败:", error);
-      toast.error("删除失败，请重试");
+      toast.error("删除失败,请重试");
     } finally {
       setIsDeleting(false);
     }

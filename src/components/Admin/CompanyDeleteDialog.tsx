@@ -67,7 +67,7 @@ export default function CompanyDeleteDialog({
           </Box>
 
           <Alert severity="error" icon={<WarningIcon />}>
-            此操作将从区块链上删除该企业的所有数据，<strong>不可恢复</strong>！
+            此操作将从区块链上删除该企业的所有数据,<strong>不可恢复</strong>！
           </Alert>
         </Box>
       </DialogContent>

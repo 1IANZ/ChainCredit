@@ -51,7 +51,7 @@ pub struct ScoreDetails {
     pub industry_adjustment: f64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExcelResult {
     pub file: String,
     pub sheet_name: String,
