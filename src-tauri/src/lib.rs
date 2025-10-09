@@ -19,7 +19,9 @@ pub fn run() {
             update_company,
             delete_company,
             get_all_companies,
-            clear_private_key
+            clear_private_key,
+            submit_to_bank,
+            get_bank_credit_limit
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

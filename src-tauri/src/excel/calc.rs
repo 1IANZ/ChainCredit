@@ -1,6 +1,7 @@
 use crate::excel::types::{CompanyData, CompanyWithScore, ExcelResult, ScoreDetails};
 use calamine::{open_workbook_auto, Reader};
 use std::collections::HashMap;
+
 pub fn calculate_credit_score(company: &CompanyData) -> (f64, ScoreDetails) {
     let mut raw_details = ScoreDetails {
         financial_score: 0.0,
@@ -235,4 +236,30 @@ pub fn process_excel_internal(paths: Vec<String>) -> Result<Vec<ExcelResult>, St
     }
 
     Ok(all_results)
+}
+
+pub fn parse_credit_limit(limit_str: &str) -> f64 {
+    if limit_str.contains("以上") {
+        limit_str
+            .replace("万以上", "")
+            .parse::<f64>()
+            .unwrap_or(1000.0)
+    } else if limit_str.contains("以下") {
+        limit_str
+            .replace("万以下", "")
+            .parse::<f64>()
+            .unwrap_or(50.0)
+    } else if limit_str.contains('-') {
+        let cleaned = limit_str.replace('万', "");
+        let parts: Vec<&str> = cleaned.split('-').collect();
+        if parts.len() == 2 {
+            let low = parts[0].parse::<f64>().unwrap_or(0.0);
+            let high = parts[1].parse::<f64>().unwrap_or(low);
+            (low + high) / 2.0
+        } else {
+            100.0
+        }
+    } else {
+        100.0
+    }
 }

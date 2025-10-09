@@ -1,9 +1,18 @@
 mod calc;
 mod types;
 
+use std::collections::HashMap;
+use std::sync::LazyLock;
+use std::time::Duration;
+
+use crate::excel::calc::parse_credit_limit;
 use crate::excel::types::CompanyWithScoreEn;
 use crate::excel::{calc::process_excel_internal, types::ExcelResultEn};
 use rust_xlsxwriter::{Format, FormatAlign, Workbook};
+use tokio::sync::Mutex;
+
+static BANK_LIMIT_DB: LazyLock<Mutex<HashMap<String, f64>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 #[tauri::command]
 pub fn process_excel(paths: Vec<String>) -> Result<Vec<ExcelResultEn>, String> {
@@ -209,4 +218,63 @@ pub async fn generate_single_report(
     workbook.save(&file_path).map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn submit_to_bank(
+    company_id: String,
+    company_name: String,
+    credit_score: f64,
+    credit_rating: String,
+    credit_limit: String,
+    risk_level: String,
+) -> Result<f64, String> {
+    println!(
+        "[河北银行] 收到提交请求：公司ID={}，名称={}，评分={}，评级={}，额度={}，风险等级={}",
+        company_id, company_name, credit_score, credit_rating, credit_limit, risk_level
+    );
+    let mut db = BANK_LIMIT_DB.lock().await;
+    if let Some(&limit) = db.get(&company_id) {
+        return Ok(limit);
+    }
+
+    // 模拟银行审批延迟
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    // 解析额度字符串
+    let base_limit = parse_credit_limit(&credit_limit);
+
+    // 根据风险等级和信用评分计算额度
+    let risk_factor = match risk_level.as_str() {
+        "低" => 1.05,
+        "中" => 0.9,
+        "高" => 0.75,
+        "极高" => 0.5,
+        _ => 1.0,
+    };
+    let score_factor = (credit_score / 100.0).clamp(0.3, 1.2);
+
+    let rating_factor = match credit_rating.as_str() {
+        "AAA" => 1.1,
+        "AA" => 1.05,
+        "A" => 1.0,
+        _ => 0.9,
+    };
+
+    let approved_limit = (base_limit * risk_factor * score_factor * rating_factor).round();
+
+    db.insert(company_id.clone(), approved_limit);
+
+    println!(
+        "[河北银行] 批复完成：公司={}，额度={} 万元",
+        company_name, approved_limit
+    );
+
+    Ok(approved_limit)
+}
+/// 获取公司批复额度
+#[tauri::command]
+pub async fn get_bank_credit_limit(company_id: String) -> Option<f64> {
+    let db = BANK_LIMIT_DB.lock().await;
+    db.get(&company_id).cloned()
 }

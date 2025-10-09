@@ -30,6 +30,28 @@ export default function DataVisualization({ data }: Props) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [publicKey, setPublicKey] = useState<string>("");
+  const [isSubmittingBank, setIsSubmittingBank] = useState(false);
+  const [bankCreditLimit, setBankCreditLimit] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!selectedCompany) {
+      setBankCreditLimit(null);
+      return;
+    }
+
+    async function fetchBankLimit() {
+      try {
+        const limit: number | null = await invoke("get_bank_credit_limit", {
+          companyId: selectedCompany?.company_data.company_id,
+        });
+        setBankCreditLimit(limit);
+      } catch {
+        setBankCreditLimit(null);
+      }
+    }
+
+    fetchBankLimit();
+  }, [selectedCompany]);
 
   useEffect(() => {
     async function fetchPublicKey() {
@@ -43,6 +65,51 @@ export default function DataVisualization({ data }: Props) {
 
     fetchPublicKey();
   }, []);
+
+  const handleSubmitToBank = async () => {
+    if (!selectedCompany) {
+      toast.warning("请先选择一个公司");
+      return;
+    }
+
+    setIsSubmittingBank(true);
+    try {
+      const limit: number = await invoke("submit_to_bank", {
+        companyId: selectedCompany.company_data.company_id,
+        companyName: selectedCompany.company_data.company_name,
+        creditScore: selectedCompany.credit_score,
+        creditRating: selectedCompany.credit_rating,
+        creditLimit: selectedCompany.credit_limit,
+        riskLevel: selectedCompany.risk_level,
+      });
+      setBankCreditLimit(limit);
+      toast.success(`河北银行批复额度：${limit} 万元`);
+    } catch {
+      toast.error("提交失败，请稍后重试");
+    } finally {
+      setIsSubmittingBank(false);
+    }
+  };
+
+
+  const handleFetchBankLimit = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      const limit: number | null = await invoke("get_bank_credit_limit", {
+        companyId: selectedCompany.company_data.company_id,
+      });
+      if (limit !== null) {
+        setBankCreditLimit(limit);
+        toast.success(`河北银行批复额度：${limit} 万元`);
+      } else {
+        toast.info("当前公司暂无批复额度，请先提交至河北银行");
+      }
+    } catch (error) {
+      toast.error("获取河北银行批复额度失败");
+    }
+  };
+
 
   const handleDownloadReport = async () => {
     if (!selectedCompany) {
@@ -109,6 +176,7 @@ export default function DataVisualization({ data }: Props) {
         elevation={2}
         sx={{
           width: 280,
+          flexShrink: 0,
           height: "100%",
           display: "flex",
           flexDirection: "column",
@@ -139,6 +207,10 @@ export default function DataVisualization({ data }: Props) {
               onDownload={handleDownloadReport}
               isUploading={isUploading}
               onUpload={handleUploadOnChain}
+              isSubmittingBank={isSubmittingBank}
+              onSubmitToBank={handleSubmitToBank}
+              bankCreditLimit={bankCreditLimit}
+              onFetchBankLimit={handleFetchBankLimit}
               publikKey={publicKey}
             />
 
