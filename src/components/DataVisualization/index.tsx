@@ -79,7 +79,7 @@ export default function DataVisualization({ data }: Props) {
         const res: string = await invoke("get_public_key");
         setPublicKey(res);
       } catch (error) {
-        // ignore
+        toast.error("获取公钥失败");
       }
     }
 

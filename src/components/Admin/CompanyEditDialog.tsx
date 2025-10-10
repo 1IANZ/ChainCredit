@@ -57,7 +57,7 @@ export default function CompanyEditDialog({ open, onClose, company, onUpdate }: 
 
   const handleChange = (field: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // 清除该字段的错误
+
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };

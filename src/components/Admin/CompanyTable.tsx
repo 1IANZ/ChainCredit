@@ -19,7 +19,7 @@ interface Props {
   onSort: () => void;
   onViewDetail: (c: CompanyChainData) => void;
   onEdit: (c: CompanyChainData) => void;
-  onDelete: (c: CompanyChainData) => void;  // 修改:传递整个 company 对象
+  onDelete: (c: CompanyChainData) => void;
   searchTerm: string;
 }
 

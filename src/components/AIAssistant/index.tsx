@@ -33,7 +33,7 @@ export default function AIAssistant({ company, messages, setMessages }: AIAssist
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const streamingContentRef = useRef<string>('');
 
-  /** 滚动到底部 */
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -42,7 +42,6 @@ export default function AIAssistant({ company, messages, setMessages }: AIAssist
     scrollToBottom();
   }, [messages]);
 
-  /** 流式响应监听 */
   useEffect(() => {
     let chunkUnlisten: (() => void) | null = null;
     let endUnlisten: (() => void) | null = null;
@@ -93,7 +92,6 @@ export default function AIAssistant({ company, messages, setMessages }: AIAssist
     };
   }, []);
 
-  /** 发送消息 */
   const handleSend = async (
     question?: string,
     type?: 'credit_analysis' | 'algorithm_check'
@@ -119,7 +117,7 @@ export default function AIAssistant({ company, messages, setMessages }: AIAssist
     setIsLoading(true);
     streamingContentRef.current = '';
 
-    // systemPrompt 构建
+
     let systemPrompt = `你是一个专业的企业信用分析专家,精通财务分析、风险评估和信贷决策。
 请使用 Markdown 格式输出，包括：
 - 使用 **粗体** 强调重点
@@ -189,7 +187,6 @@ export default function AIAssistant({ company, messages, setMessages }: AIAssist
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.50' }}>
 
-      {/* 快捷分析按钮 */}
       {company && messages.length === 0 && (
         <Fade in timeout={500}>
           <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
@@ -239,9 +236,7 @@ export default function AIAssistant({ company, messages, setMessages }: AIAssist
         </Fade>
       )}
 
-      {/* 对话区域 */}
       <Box sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column' }}>
-        {/* 欢迎界面 */}
         {messages.length === 0 && company && (
           <Fade in timeout={800}>
             <Box sx={{ textAlign: 'center', mt: 'auto', mb: 'auto', color: 'text.secondary' }}>
@@ -276,7 +271,6 @@ export default function AIAssistant({ company, messages, setMessages }: AIAssist
           </Box>
         )}
 
-        {/* 消息列表 */}
         {messages.map((msg, i) => (
           <Fade in key={i} timeout={300}>
             <Box sx={{ mb: 2, display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: 1.5 }}>
@@ -313,7 +307,7 @@ export default function AIAssistant({ company, messages, setMessages }: AIAssist
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* 输入框 */}
+
       <Box sx={{ p: 2.5, borderTop: 1, borderColor: 'divider', bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'background.paper' }}>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-end' }}>
           <TextField

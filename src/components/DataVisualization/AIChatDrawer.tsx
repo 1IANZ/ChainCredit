@@ -23,8 +23,6 @@ interface Props {
 
 export default function AIChatDrawer({ open, onClose, company, messages, setMessages }: Props) {
   const theme = useTheme();
-
-  // 每次切换公司时清空聊天记录
   useEffect(() => {
     setMessages([]);
   }, [company]);
@@ -43,7 +41,7 @@ export default function AIChatDrawer({ open, onClose, company, messages, setMess
         }
       }}
     >
-      {/* 抽屉头部 */}
+
       <Box
         sx={{
           p: 2.5,

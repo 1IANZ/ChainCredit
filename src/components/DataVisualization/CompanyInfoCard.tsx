@@ -7,7 +7,6 @@ import {
   CircularProgress,
   Box,
   Stack,
-  colors
 } from "@mui/material";
 import DownloadIcon from '@mui/icons-material/Download';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -41,7 +40,6 @@ export default function CompanyInfoCard({
   return (
     <Card sx={{ mb: 3 }}>
       <CardContent>
-        {/* 顶部:公司名称和操作按钮 */}
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           justifyContent="space-between"
@@ -49,7 +47,7 @@ export default function CompanyInfoCard({
           spacing={2}
           sx={{ mb: 3 }}
         >
-          {/* 公司信息 */}
+
           <Box>
             <Typography variant="h5" fontWeight="bold" gutterBottom>
               {company.company_data.company_name}
@@ -59,7 +57,7 @@ export default function CompanyInfoCard({
             </Typography>
           </Box>
 
-          {/* 操作按钮组 */}
+
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1.5}
@@ -68,7 +66,7 @@ export default function CompanyInfoCard({
               alignItems: 'stretch'
             }}
           >
-            {/* 河北银行状态/按钮 */}
+
             {bankCreditLimit == null ? (
               <Button
                 variant="contained"
@@ -103,7 +101,6 @@ export default function CompanyInfoCard({
               </Box>
             )}
 
-            {/* 数据上链按钮 */}
             {publikKey && (
               <Button
                 variant="contained"
@@ -120,7 +117,6 @@ export default function CompanyInfoCard({
               </Button>
             )}
 
-            {/* 下载报告按钮 */}
             <Button
               variant="contained"
               startIcon={!isDownloading && <DownloadIcon />}
@@ -139,7 +135,6 @@ export default function CompanyInfoCard({
 
         <Divider sx={{ my: 2 }} />
 
-        {/* 底部:信用信息展示 */}
         <Box
           sx={{
             display: 'grid',
@@ -150,7 +145,7 @@ export default function CompanyInfoCard({
             gap: 3
           }}
         >
-          {/* 信用评分 */}
+
           <Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               信用评分
@@ -160,7 +155,7 @@ export default function CompanyInfoCard({
             </Typography>
           </Box>
 
-          {/* 信用评级 */}
+
           <Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               信用评级
@@ -182,7 +177,7 @@ export default function CompanyInfoCard({
             </Box>
           </Box>
 
-          {/* 信用额度 */}
+
           <Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               信用额度
@@ -192,7 +187,7 @@ export default function CompanyInfoCard({
             </Typography>
           </Box>
 
-          {/* 风险等级 */}
+
           <Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               风险等级

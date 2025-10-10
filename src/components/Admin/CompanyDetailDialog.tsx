@@ -51,7 +51,7 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
 
       <DialogContent dividers>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {/* 信用评分卡片 */}
+
           <Card variant="outlined">
             <CardContent>
               <Typography variant="h6" gutterBottom color="primary">
@@ -105,7 +105,6 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
             </CardContent>
           </Card>
 
-          {/* 授信策略 */}
           <Card
             variant="outlined"
             sx={{
@@ -123,7 +122,6 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
             </CardContent>
           </Card>
 
-          {/* 链上信息 */}
           {company.timestamp && (
             <Card variant="outlined">
               <CardContent>
@@ -164,7 +162,6 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
             </Card>
           )}
 
-          {/* 高风险警告 */}
           {isHighRisk && (
             <Alert
               severity="warning"
@@ -178,7 +175,6 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
             </Alert>
           )}
 
-          {/* 中风险提示 */}
           {needAttention && (
             <Alert
               severity="info"
@@ -192,7 +188,6 @@ export default function CompanyDetailDialog({ open, onClose, company }: Props) {
             </Alert>
           )}
 
-          {/* 优质企业提示 */}
           {isExcellent && (
             <Alert
               severity="success"

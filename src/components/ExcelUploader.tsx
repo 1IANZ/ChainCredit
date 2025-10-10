@@ -204,8 +204,6 @@ export default function ExcelUploader({ onFileSelect, disabled = false }: ExcelU
           '历史逾期次数',
           '法律诉讼次数'
         ],
-        //21,500	2,500	32,000	8,000	25	18	60	4	110	0	0
-
         templateRow: [
           'QY006',
           '朗创人工智能有限公司',

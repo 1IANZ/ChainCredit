@@ -340,14 +340,13 @@ export default function Admin() {
         />
       </Container>
 
-      {/* 详情对话框 */}
+
       <CompanyDetailDialog
         open={detailDialogOpen}
         onClose={() => setDetailDialogOpen(false)}
         company={selectedCompany}
       />
 
-      {/* 编辑对话框 */}
       <CompanyEditDialog
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
@@ -355,7 +354,6 @@ export default function Admin() {
         onUpdate={handleUpdateCompany}
       />
 
-      {/* 删除确认对话框 */}
       <CompanyDeleteDialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
