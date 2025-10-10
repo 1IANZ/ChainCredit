@@ -29,6 +29,11 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "AlexNian",
+    "copyright": "© 2025 Alex",
+    "category": "Finance",
+    "shortDescription": "A decentralized credit analysis and management app built with Tauri and React",
+    "longDescription": "ChainCredit is a desktop application built with Tauri and React that helps users securely analyze and manage decentralized trust and credit relationships.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
